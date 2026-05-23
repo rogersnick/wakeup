@@ -1,6 +1,12 @@
 "use client";
 
+import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { IconCircle } from "@/components/ui/icon-circle";
 
 type Props = {
   verifiedPhone?: string | null;
@@ -17,10 +23,19 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
 
   if (verifiedPhone) {
     return (
-      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-        <h2 className="font-medium text-emerald-900">Phone verified</h2>
-        <p className="mt-1 text-sm text-emerald-800">{verifiedPhone}</p>
-      </section>
+      <Card variant="success" className="p-8">
+        <div className="flex items-start gap-4">
+          <IconCircle
+            icon={CheckCircle2}
+            iconClassName="text-secondary"
+            className="shrink-0 bg-emerald-100"
+          />
+          <div>
+            <CardTitle className="text-emerald-900">Phone verified</CardTitle>
+            <CardDescription className="text-emerald-800">{verifiedPhone}</CardDescription>
+          </div>
+        </div>
+      </Card>
     );
   }
 
@@ -74,50 +89,47 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
   }
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-5 text-stone-900">
-      <h2 className="font-medium">Verify your phone</h2>
-      <p className="mt-1 text-sm text-stone-700">
+    <Card className="p-8">
+      <CardTitle>Verify your phone</CardTitle>
+      <CardDescription>
         Required before scheduling. Use E.164 format like +14165551234.
-      </p>
+      </CardDescription>
 
-      <div className="mt-4 grid gap-3">
-        <input
-          className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400"
+      <div className="mt-6 grid gap-4">
+        <Input
           placeholder="+14165551234"
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
         />
-        <button
+        <Button
           type="button"
           disabled={loading || phone.trim().length === 0}
           onClick={sendCode}
-          className="rounded-xl bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           Send code
-        </button>
+        </Button>
 
         {sentTo ? (
           <>
-            <input
-              className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400"
+            <Input
               placeholder="6-digit code"
               value={code}
               onChange={(event) => setCode(event.target.value)}
             />
-            <button
+            <Button
               type="button"
+              variant="secondary"
               disabled={loading || code.trim().length === 0}
               onClick={verifyCode}
-              className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-900 disabled:opacity-50"
             >
               Verify code
-            </button>
+            </Button>
           </>
         ) : null}
       </div>
 
-      {message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-    </section>
+      {message ? <Alert variant="success" className="mt-4">{message}</Alert> : null}
+      {error ? <Alert variant="error" className="mt-4">{error}</Alert> : null}
+    </Card>
   );
 }
