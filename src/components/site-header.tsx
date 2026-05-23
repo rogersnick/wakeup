@@ -2,28 +2,30 @@
 
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export function SiteHeader() {
   const { isSignedIn } = useAuth();
 
   return (
-    <header className="border-b border-stone-200 bg-white">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
+    <header className="bg-background">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <Link
+          href="/"
+          className="text-xl font-extrabold tracking-tight transition-colors duration-200 hover:text-primary"
+        >
           Wake Up Call
         </Link>
         <div className="flex items-center gap-3">
           {!isSignedIn ? (
             <SignInButton mode="modal">
-              <button className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">
-                Sign in
-              </button>
+              <Button size="sm">Sign in</Button>
             </SignInButton>
           ) : (
             <>
               <Link
                 href="/dashboard"
-                className="text-sm font-medium text-stone-600 hover:text-stone-900"
+                className="text-sm font-semibold uppercase tracking-wider text-gray-600 transition-colors duration-200 hover:text-primary"
               >
                 Dashboard
               </Link>

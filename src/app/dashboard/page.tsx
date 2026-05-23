@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { PhoneVerification } from "@/components/phone-verification";
 import { ScheduleForm } from "@/components/schedule-form";
 import { WakeupList } from "@/components/wakeup-list";
@@ -17,41 +17,56 @@ export default function DashboardPage() {
   const [me, setMe] = useState<MeResponse["user"] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadMe = useCallback(async () => {
-    const response = await fetch("/api/me");
-    if (!response.ok) {
-      return;
-    }
-    const data = (await response.json()) as MeResponse;
-    setMe(data.user);
-  }, []);
-
   useEffect(() => {
-    void loadMe();
-  }, [loadMe, refreshKey]);
+    let cancelled = false;
+
+    async function fetchMe() {
+      const response = await fetch("/api/me");
+      if (!response.ok || cancelled) {
+        return;
+      }
+      const data = (await response.json()) as MeResponse;
+      if (!cancelled) {
+        setMe(data.user);
+      }
+    }
+
+    void fetchMe();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
 
   const phoneVerified = Boolean(me?.phoneVerifiedAt && me.phoneE164);
 
   return (
-    <main className="mx-auto grid max-w-5xl gap-6 px-6 py-10">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="mt-2 text-stone-600">
-          Verify your phone, schedule a wake-up, and watch the cron dial you.
-        </p>
+    <main className="bg-muted min-h-[calc(100vh-4rem)]">
+      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wider text-primary">
+            Dashboard
+          </p>
+          <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Your wake-ups
+          </h1>
+          <p className="mt-3 max-w-2xl text-lg text-gray-600">
+            Verify your phone, schedule a wake-up, and watch the cron dial you.
+          </p>
+        </div>
+
+        <PhoneVerification
+          verifiedPhone={me?.phoneE164}
+          onVerified={() => setRefreshKey((value) => value + 1)}
+        />
+
+        <ScheduleForm
+          disabled={!phoneVerified}
+          onCreated={() => setRefreshKey((value) => value + 1)}
+        />
+
+        <WakeupList refreshKey={refreshKey} />
       </div>
-
-      <PhoneVerification
-        verifiedPhone={me?.phoneE164}
-        onVerified={() => setRefreshKey((value) => value + 1)}
-      />
-
-      <ScheduleForm
-        disabled={!phoneVerified}
-        onCreated={() => setRefreshKey((value) => value + 1)}
-      />
-
-      <WakeupList key={refreshKey} />
     </main>
   );
 }
