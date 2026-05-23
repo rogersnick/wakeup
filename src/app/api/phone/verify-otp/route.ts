@@ -1,0 +1,63 @@
+import { and, desc, eq } from "drizzle-orm";
+import { jsonError, requireUserId } from "@/lib/api";
+import { getDb } from "@/lib/db";
+import { phoneOtps, users } from "@/lib/db/schema";
+import { hashOtpCode } from "@/lib/otp";
+
+export async function POST(request: Request) {
+  const authResult = await requireUserId();
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+
+  try {
+    const body = (await request.json()) as { code?: string };
+    if (!body.code) {
+      return jsonError("Verification code is required.");
+    }
+
+    const db = getDb();
+    const otp = await db.query.phoneOtps.findFirst({
+      where: eq(phoneOtps.userId, authResult.userId),
+      orderBy: [desc(phoneOtps.createdAt)],
+    });
+
+    if (!otp) {
+      return jsonError("No verification code found. Request a new one.");
+    }
+
+    if (otp.expiresAt < new Date()) {
+      return jsonError("Verification code expired. Request a new one.");
+    }
+
+    if (otp.attempts >= 5) {
+      return jsonError("Too many attempts. Request a new code.");
+    }
+
+    if (otp.codeHash !== hashOtpCode(body.code)) {
+      await db
+        .update(phoneOtps)
+        .set({ attempts: otp.attempts + 1 })
+        .where(eq(phoneOtps.id, otp.id));
+      return jsonError("Invalid verification code.");
+    }
+
+    const now = new Date();
+    await db
+      .update(users)
+      .set({
+        phoneE164: otp.phoneE164,
+        phoneVerifiedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(users.id, authResult.userId));
+
+    await db.delete(phoneOtps).where(and(eq(phoneOtps.userId, authResult.userId)));
+
+    return Response.json({ ok: true, phoneE164: otp.phoneE164 });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to verify code.";
+    return jsonError(message, 500);
+  }
+}
