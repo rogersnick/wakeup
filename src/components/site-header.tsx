@@ -43,8 +43,10 @@ export function SiteHeader() {
             </SignInButton>
           ) : (
             <>
-              <HeaderCityStatus />
-              <HeaderPhoneStatus />
+              <div className="hidden items-center gap-3 md:flex">
+                <HeaderCityStatus />
+                <HeaderPhoneStatus />
+              </div>
               <nav className="flex items-center gap-4">
                 {navLinks.map(({ href, label }) => {
                   const active =

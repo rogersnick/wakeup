@@ -11,8 +11,13 @@ async function runCron(request: Request) {
   }
 
   try {
-    const results = await processDueWakeups();
-    return Response.json({ ok: true, processed: results.length, results });
+    const { results, recovered } = await processDueWakeups();
+    return Response.json({
+      ok: true,
+      processed: results.length,
+      recovered: recovered.length,
+      results,
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Cron processing failed.";

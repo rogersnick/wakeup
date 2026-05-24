@@ -38,6 +38,8 @@ export async function POST(request: Request) {
       contentConfig?: Record<string, unknown> | null;
       voiceId?: string;
       timezone?: string;
+      challengeEnabled?: boolean;
+      challengeType?: string | null;
     };
 
     const scriptMode = body.scriptMode ?? "static";
@@ -62,6 +64,8 @@ export async function POST(request: Request) {
       contentConfig: parseContentConfigFromBody(body.contentConfig ?? undefined),
       voiceId: body.voiceId,
       timezone: body.timezone,
+      challengeEnabled: body.challengeEnabled,
+      challengeType: body.challengeType,
     });
 
     return Response.json({ wakeup }, { status: 201 });

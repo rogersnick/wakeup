@@ -13,6 +13,7 @@ import { REQUEST_CITY_CHANGE_EVENT } from "@/lib/profile-events";
 import {
   formatScheduleSummary,
   formatWakeupMessage,
+  getWakeupCallControls,
   type WakeupDisplay,
 } from "@/lib/wakeup/display";
 import {
@@ -134,6 +135,7 @@ export function NextWakeupPreview({
     wakeup.scheduledTimeLocal,
     wakeup.recurrence?.days ?? null,
   );
+  const callControls = getWakeupCallControls(wakeup);
 
   return (
     <Card className="overflow-hidden p-0" variant="primary">
@@ -169,14 +171,38 @@ export function NextWakeupPreview({
               <Badge variant="accent">Calling now</Badge>
             ) : null}
             <div className="flex gap-2">
-              <div className="flex items-center gap-2 border-2 border-foreground bg-foreground px-3 py-1.5 text-background">
-                <span className="font-mono text-base font-extrabold leading-none">1</span>
-                <span className="font-mono text-xs font-bold uppercase tracking-widest">I&apos;m awake</span>
-              </div>
-              <div className="flex items-center gap-2 border-2 border-foreground px-3 py-1.5">
-                <span className="font-mono text-base font-extrabold leading-none">2</span>
-                <span className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">SNOOZE</span>
-              </div>
+              {callControls.map((control) => (
+                <div
+                  key={control.id}
+                  className={
+                    control.primary
+                      ? "flex items-center gap-2 border-2 border-foreground bg-foreground px-3 py-1.5 text-background"
+                      : "flex items-center gap-2 border-2 border-foreground px-3 py-1.5"
+                  }
+                >
+                  {control.digit ? (
+                    <span className="font-mono text-base font-extrabold leading-none">
+                      {control.digit}
+                    </span>
+                  ) : (
+                    <span
+                      aria-hidden
+                      className="font-mono text-base font-extrabold leading-none"
+                    >
+                      #
+                    </span>
+                  )}
+                  <span
+                    className={
+                      control.primary
+                        ? "font-mono text-xs font-bold uppercase tracking-widest"
+                        : "font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground"
+                    }
+                  >
+                    {control.label}
+                  </span>
+                </div>
+              ))}
             </div>
             {wakeup.snoozeCount > 0 ? (
               <p className="font-mono text-xs text-muted-foreground">
