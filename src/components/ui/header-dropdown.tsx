@@ -78,8 +78,8 @@ export function HeaderDropdown({
         <div
           id={panelId}
           className={cn(
-            "absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border-2 border-border",
-            "bg-background p-4 shadow-[4px_4px_0px_0px_#4c1d95]",
+            "absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border-light",
+            "bg-background p-4 shadow-lg shadow-black/40",
             panelClassName,
           )}
         >

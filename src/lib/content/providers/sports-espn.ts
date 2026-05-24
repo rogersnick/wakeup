@@ -1,5 +1,4 @@
 import type { ContentFetchContext, ContentPayload } from "@/lib/content/types";
-import { createFallbackPayload } from "@/lib/content/types";
 import {
   buildTeamSchedulePayload,
   dedupeScheduleEvents,

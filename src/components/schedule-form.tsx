@@ -227,9 +227,9 @@ function StepIndicator({
                 className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors duration-100",
                   isActive
-                    ? "border-[#ff6a00] bg-[#ff6a00]/10 text-[#ff6a00]"
+                    ? "border-brand bg-brand/15 text-brand"
                     : isPast
-                    ? "border-foreground bg-foreground text-background group-hover:border-[#ff6a00] group-hover:bg-transparent group-hover:text-[#ff6a00]"
+                    ? "border-foreground bg-foreground text-background group-hover:border-brand group-hover:bg-transparent group-hover:text-brand"
                     : "border-border text-muted-foreground",
                 )}
               >
@@ -239,9 +239,9 @@ function StepIndicator({
                 className={cn(
                   "font-mono text-xs font-medium uppercase tracking-widest transition-colors duration-100",
                   isActive
-                    ? "text-[#ff6a00]"
+                    ? "text-brand"
                     : isPast
-                    ? "text-foreground group-hover:text-[#ff6a00]"
+                    ? "text-foreground group-hover:text-brand"
                     : "text-muted-foreground",
                 )}
               >
@@ -329,7 +329,7 @@ function VoiceCard({
         className={cn(
           voiceActionButtonClassName,
           selected
-            ? "border-background text-foreground hover:border-background hover:bg-background hover:text-[#ff6a00] focus-visible:outline-background"
+            ? "border-background text-foreground hover:border-background hover:bg-background hover:text-brand focus-visible:outline-background"
             : "border-foreground text-foreground hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
         )}
       >
@@ -357,7 +357,7 @@ function VoiceCard({
           onClick={onConfirm}
           className={cn(
             voiceActionButtonClassName,
-            "border-background text-foreground hover:border-background hover:bg-background hover:text-[#ff6a00] focus-visible:outline-background",
+            "border-background text-foreground hover:border-background hover:bg-background hover:text-brand focus-visible:outline-background",
           )}
         >
           Select
@@ -413,7 +413,7 @@ function ConfirmCallPreviewPanel({
   }, [payload]);
 
   return (
-    <div className="grid gap-4 border-2 border-border p-4">
+    <div className="grid gap-4 border border-border-light p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-base font-semibold text-foreground">
@@ -547,14 +547,14 @@ function MessagePreviewPanel({
   onVoiceClick: () => void;
 }) {
   return (
-    <div className="grid gap-3 border-2 border-border p-4">
+    <div className="grid gap-3 border border-border-light p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           Voice:{" "}
           <button
             type="button"
             onClick={onVoiceClick}
-            className="font-medium text-foreground underline-offset-4 hover:underline hover:text-orange-500 transition-colors duration-100"
+            className="font-medium text-foreground underline-offset-4 transition-colors duration-100 hover:underline hover:text-brand"
           >
             {selectedVoiceName}
           </button>
@@ -1158,7 +1158,7 @@ export function ScheduleForm({
               <Section title="Schedule">
                 <div className="flex flex-wrap items-end gap-6">
                   <div className="grid gap-2">
-                    <p className="text-sm text-muted-foreground">Frequency</p>
+                    <p className="text-base text-muted-foreground">Frequency</p>
                     <SegmentedControl
                       value={type}
                       onChange={setType}
@@ -1170,7 +1170,7 @@ export function ScheduleForm({
                   </div>
                   {type === "one_shot" ? (
                     <div className="grid gap-2">
-                      <p className="text-sm text-muted-foreground">Date</p>
+                      <p className="text-base text-muted-foreground">Date</p>
                       <Input
                         type="date"
                         value={scheduledDate}
@@ -1197,8 +1197,8 @@ export function ScheduleForm({
                       className={cn(
                         "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                         scheduledTimeLocal === time && !customTime
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-foreground hover:bg-border hover:text-[#ff6a00]",
+                          ? "bg-brand/20 text-brand"
+                          : "bg-muted text-foreground hover:bg-border hover:text-brand",
                       )}
                     >
                       {formatTimeLabel(time)}
@@ -1215,8 +1215,8 @@ export function ScheduleForm({
                     className={cn(
                       "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                       customTime
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground hover:bg-border hover:text-[#ff6a00]",
+                        ? "bg-brand/20 text-brand"
+                        : "bg-muted text-foreground hover:bg-border hover:text-brand",
                     )}
                   >
                     {customTime ? formatTimeLabel(scheduledTimeLocal) : "Custom"}
@@ -1225,7 +1225,7 @@ export function ScheduleForm({
                     <button
                       type="button"
                       onClick={scheduleInFiveMinutes}
-                      className="rounded-md bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-border hover:text-[#ff6a00]"
+                      className="rounded-md bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-border hover:text-brand"
                     >
                       In 5 min
                     </button>
@@ -1255,7 +1255,7 @@ export function ScheduleForm({
                         key={label}
                         type="button"
                         onClick={action}
-                        className="rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-border hover:text-[#ff6a00]"
+                        className="rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-border hover:text-brand"
                       >
                         {label}
                       </button>
@@ -1274,8 +1274,8 @@ export function ScheduleForm({
                           className={cn(
                             "flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-colors",
                             selected
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-border hover:text-[#ff6a00]",
+                              ? "bg-brand/20 text-brand"
+                              : "bg-muted text-muted-foreground hover:bg-border hover:text-brand",
                           )}
                         >
                           {label}
@@ -1305,7 +1305,7 @@ export function ScheduleForm({
                         className={cn(
                           "border-2 p-4 text-left transition-colors",
                           selected
-                            ? "border-[#ff6a00] bg-[#ff6a00]/10"
+                            ? "border-brand bg-brand/15"
                             : "border-border hover:border-foreground",
                         )}
                       >
@@ -1335,8 +1335,8 @@ export function ScheduleForm({
                         className={cn(
                           "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                           scriptText === preset.text
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-border hover:text-[#ff6a00]",
+                            ? "bg-brand/20 text-brand"
+                            : "bg-muted text-muted-foreground hover:bg-border hover:text-brand",
                         )}
                       >
                         {preset.label}
@@ -1376,7 +1376,7 @@ export function ScheduleForm({
                       />
                     ) : (
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-base text-muted-foreground">
                           Location: {weatherCityLabel}
                         </p>
                         <Button
@@ -1406,7 +1406,7 @@ export function ScheduleForm({
                     />
                   ) : needsProfilePrefs ? (
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-base text-muted-foreground">
                         {scriptMode === "sports_scores"
                           ? `Team: ${favoriteTeam}`
                           : scriptMode === "market_brief"
@@ -1426,7 +1426,7 @@ export function ScheduleForm({
                     </div>
                   ) : null}
 
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <p className="mt-2 text-base text-muted-foreground">
                     Generated fresh each call.
                   </p>
                 </Section>
@@ -1463,14 +1463,14 @@ export function ScheduleForm({
                 }
               >
                 <div className="grid gap-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-border px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border border-border-light px-4 py-3">
                     <CardEyebrow className="shrink-0">Selected voice</CardEyebrow>
                     <p className="text-base font-semibold text-foreground">
                       {selectedVoice?.name ?? "Default voice"}
                     </p>
                   </div>
                   <label className="grid gap-2">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-base text-muted-foreground">
                       Search voices
                     </span>
                     <span className="relative">
@@ -1489,7 +1489,7 @@ export function ScheduleForm({
                 </div>
 
                 {voicesLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading voices...</p>
+                  <p className="text-base text-muted-foreground">Loading voices...</p>
                 ) : null}
 
                 {voiceError ? <Alert variant="error">{voiceError}</Alert> : null}
@@ -1531,7 +1531,7 @@ export function ScheduleForm({
                     </div>
 
                     {filteredVoices.length === 0 ? (
-                      <p className="border-2 border-border p-5 text-sm text-muted-foreground">
+                      <p className="border border-border-light p-5 text-base text-muted-foreground">
                         No voices match &ldquo;{voiceSearch.trim()}&rdquo;. Try a
                         different keyword or clear the search.
                       </p>
@@ -1540,7 +1540,7 @@ export function ScheduleForm({
                 ) : null}
 
                 {!voicesLoading && !voiceError && voices.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     No voices found. Scheduling will use your default voice.
                   </p>
                 ) : null}
@@ -1550,14 +1550,27 @@ export function ScheduleForm({
 
           {step === "confirm" ? (
             <div className="grid gap-6">
+              <div className="border border-brand/50 bg-brand/10 p-5">
+                <p className="font-mono text-xs font-semibold uppercase tracking-widest text-brand">
+                  Almost armed
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                  You&apos;re one tap away from a reliable morning.
+                </p>
+                <p className="mt-2 text-base leading-7 text-muted-foreground">
+                  Once scheduled, we call at your exact time and keep listening for
+                  your confirmation.
+                </p>
+              </div>
+
               <CardPanel>
-                <dl className="grid gap-4 text-sm">
+                <dl className="grid gap-4 text-base">
                   <div>
                     <CardEyebrow>Schedule</CardEyebrow>
                     <dd className="mt-2 text-lg font-semibold text-foreground">
                       {scheduleSummary}
                     </dd>
-                    <dd className="text-muted-foreground">{timezone}</dd>
+                    <dd className="text-base text-muted-foreground">{timezone}</dd>
                   </div>
                   <div>
                     <CardEyebrow>Message</CardEyebrow>
@@ -1618,7 +1631,7 @@ export function ScheduleForm({
                           className={cn(
                             "border-2 p-4 text-left transition-colors",
                             selected
-                              ? "border-[#ff6a00] bg-[#ff6a00]/10"
+                              ? "border-brand bg-brand/15"
                               : "border-border hover:border-foreground",
                           )}
                         >
@@ -1648,7 +1661,7 @@ export function ScheduleForm({
                 />
               </Section>
 
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 {challengeEnabled
                   ? "Solve the challenge to confirm you are awake, or press 9 to snooze during the challenge."
                   : "Press 1 when you answer to confirm you are awake, or 9 to snooze."}

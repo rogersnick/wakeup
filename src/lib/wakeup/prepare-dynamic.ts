@@ -7,7 +7,6 @@ import {
   getMissingPrerequisites,
   isGeneratedMode,
   normalizeScriptMode,
-  resolveContentConfig,
   type UserProfileContext,
   type WakeupContentConfig,
 } from "@/lib/wakeup/modes";

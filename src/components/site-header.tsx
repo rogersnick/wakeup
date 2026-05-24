@@ -5,6 +5,7 @@ import { PhoneCall } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HeaderCityStatus } from "@/components/header-city-status";
+import { HeaderNextCallStatus } from "@/components/header-next-call-status";
 import { HeaderPhoneStatus } from "@/components/header-phone-status";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,9 @@ export function SiteHeader() {
             </SignInButton>
           ) : (
             <>
+              <div className="flex items-center gap-3">
+                <HeaderNextCallStatus />
+              </div>
               <div className="hidden items-center gap-3 md:flex">
                 <HeaderCityStatus />
                 <HeaderPhoneStatus />

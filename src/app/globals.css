@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
-/* Minimalist monochrome design tokens */
+/* Noir base with restrained amber accents */
 :root {
   --background: #000000;
   --foreground: #ffffff;
   --muted: #0a0a0a;
-  --muted-foreground: #a3a3a3;
+  --muted-foreground: #b8b8b8;
   --primary: #ffffff;
   --primary-foreground: #000000;
   --secondary: #ffffff;
@@ -14,6 +14,8 @@
   --accent-foreground: #000000;
   --quaternary: #ffffff;
   --quaternary-foreground: #000000;
+  --brand: #ffb547;
+  --brand-foreground: #1d1300;
   --border: #ffffff;
   --border-light: #262626;
   --card: #000000;
@@ -33,6 +35,8 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-quaternary: var(--quaternary);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --color-border: var(--border);
   --color-border-light: var(--border-light);
   --color-card: var(--card);
@@ -81,8 +85,8 @@ textarea::placeholder {
 }
 
 ::selection {
-  background: var(--foreground);
-  color: var(--background);
+  background: var(--brand);
+  color: var(--brand-foreground);
 }
 
 :focus-visible {
