@@ -39,7 +39,7 @@ flowchart LR
     CronLogic --> TwilioOut
   end
 
-  subgraph call [During call]
+  subgraph calling_flow [During call]
     Twiml[Twilio TwiML]
     Confirm[DTMF confirm or snooze]
     TwilioOut --> Twiml --> Confirm
