@@ -24,16 +24,10 @@ export function SiteHeader() {
         {/* Logo */}
         <Link
           href="/"
-          className="group flex items-center gap-3 focus-visible:outline-3 focus-visible:outline-offset-3"
+          className="flex items-center gap-3 focus-visible:outline-3 focus-visible:outline-offset-3"
           aria-label="AlarmCall home"
         >
-          <div
-            className={[
-              "flex h-10 w-10 items-center justify-center border-2 border-foreground",
-              "bg-foreground text-background transition-colors duration-100",
-              "group-hover:bg-background group-hover:text-foreground",
-            ].join(" ")}
-          >
+          <div className="flex h-10 w-10 items-center justify-center bg-background text-foreground">
             <PhoneCall className="h-5 w-5" strokeWidth={1.5} />
           </div>
           <span className="font-serif text-xl font-semibold tracking-tight text-foreground">

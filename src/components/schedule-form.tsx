@@ -43,6 +43,17 @@ import {
   type WakeupScriptMode,
 } from "@/lib/wakeup/modes";
 
+const VOICE_PREVIEW_SAMPLE_TEXT =
+  "Good morning! This is a preview of your wake-up call. Time to get up and start your day.";
+
+const voiceActionButtonClassName = cn(
+  "h-10 min-h-0 max-h-10 w-full shrink-0 self-start gap-2 rounded-none border-2 py-0 leading-none shadow-none",
+  "whitespace-nowrap transition-colors duration-100 ease-linear",
+  "hover:translate-x-0 hover:translate-y-0 hover:shadow-none",
+  "active:translate-x-0 active:translate-y-0 active:shadow-none",
+  "focus-visible:ring-0 focus-visible:outline-[3px] focus-visible:outline-offset-2",
+);
+
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -225,7 +236,6 @@ function StepIndicator({
 function VoiceCard({
   voice,
   selected,
-  scriptMode,
   previewLoading,
   previewReady,
   previewAudioUrl,
@@ -236,7 +246,6 @@ function VoiceCard({
 }: {
   voice: Voice;
   selected: boolean;
-  scriptMode: WakeupScriptMode;
   previewLoading: boolean;
   previewReady: boolean;
   previewAudioUrl: string | null;
@@ -246,7 +255,7 @@ function VoiceCard({
   onConfirm: () => void;
 }) {
   return (
-    <SelectableCard selected={selected}>
+    <SelectableCard selected={selected} className="items-start content-start">
       <button
         type="button"
         role="radio"
@@ -279,27 +288,22 @@ function VoiceCard({
         ) : null}
       </button>
 
-      {scriptMode === "static" ? (
-        <Button
-          type="button"
-          variant={selected ? "secondary" : "outline"}
-          size="sm"
-          onClick={onPreview}
-          disabled={previewDisabled}
-          className={cn(
-            "w-full gap-2 rounded-none border-2 shadow-none transition-colors duration-100 ease-linear",
-            "hover:translate-x-0 hover:translate-y-0 hover:shadow-none",
-            "active:translate-x-0 active:translate-y-0 active:shadow-none",
-            "focus-visible:ring-0 focus-visible:outline-[3px] focus-visible:outline-offset-2",
-            selected
-              ? "border-background text-foreground hover:border-background hover:bg-background hover:text-[#ff6a00] focus-visible:outline-background"
-              : "border-foreground text-foreground hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
-          )}
-        >
-          {previewLoading ? "Generating..." : "Preview"}
-          {!previewLoading ? <Play className="h-4 w-4" /> : null}
-        </Button>
-      ) : null}
+      <Button
+        type="button"
+        variant={selected ? "secondary" : "outline"}
+        size="sm"
+        onClick={onPreview}
+        disabled={previewDisabled}
+        className={cn(
+          voiceActionButtonClassName,
+          selected
+            ? "border-background text-foreground hover:border-background hover:bg-background hover:text-[#ff6a00] focus-visible:outline-background"
+            : "border-foreground text-foreground hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
+        )}
+      >
+        {previewLoading ? "Generating..." : "Preview"}
+        {!previewLoading ? <Play className="h-4 w-4 shrink-0" /> : null}
+      </Button>
 
       {previewReady && previewAudioUrl ? (
         <audio
@@ -320,10 +324,7 @@ function VoiceCard({
           size="sm"
           onClick={onConfirm}
           className={cn(
-            "w-full rounded-none border-2 shadow-none transition-colors duration-100 ease-linear",
-            "hover:translate-x-0 hover:translate-y-0 hover:shadow-none",
-            "active:translate-x-0 active:translate-y-0 active:shadow-none",
-            "focus-visible:ring-0 focus-visible:outline-[3px] focus-visible:outline-offset-2",
+            voiceActionButtonClassName,
             "border-background text-foreground hover:border-background hover:bg-background hover:text-[#ff6a00] focus-visible:outline-background",
           )}
         >
@@ -693,7 +694,15 @@ export function ScheduleForm({
   }
 
   async function playPreview(voiceId: string) {
-    if (!voiceId || isGeneratedMode(scriptMode) || scriptText.trim().length === 0) {
+    if (!voiceId) {
+      return;
+    }
+
+    const previewText = isGeneratedMode(scriptMode)
+      ? VOICE_PREVIEW_SAMPLE_TEXT
+      : scriptText.trim();
+
+    if (previewText.length === 0) {
       return;
     }
 
@@ -708,7 +717,7 @@ export function ScheduleForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          scriptText,
+          scriptText: previewText,
           voiceId,
         }),
       });
@@ -1121,7 +1130,7 @@ export function ScheduleForm({
                 title="Voice"
                 description={
                   isGeneratedMode(scriptMode)
-                    ? `Choose who delivers your ${selectedModeDefinition?.label.toLowerCase() ?? "generated message"}.`
+                    ? `Choose who delivers your ${selectedModeDefinition?.label.toLowerCase() ?? "generated message"}. Preview uses sample text.`
                     : "Choose a voice and preview your script."
                 }
               >
@@ -1173,13 +1182,13 @@ export function ScheduleForm({
                             key={voice.voiceId}
                             voice={voice}
                             selected={selected}
-                            scriptMode={scriptMode}
                             previewLoading={previewLoading}
                             previewReady={previewVoiceId === voice.voiceId}
                             previewAudioUrl={previewAudioUrl}
                             previewDisabled={
                               previewLoading ||
-                              scriptText.trim().length === 0
+                              (!isGeneratedMode(scriptMode) &&
+                                scriptText.trim().length === 0)
                             }
                             onSelect={() => {
                               setSelectedVoiceId(voice.voiceId);
