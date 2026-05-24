@@ -18,15 +18,18 @@ type MeResponse = {
     timezone: string;
     city: string | null;
     cityResolvedLabel: string | null;
+    favoriteTeam: string | null;
+    marketSymbols: string | null;
+    zodiacSign: string | null;
   };
 };
 
-function DashboardLoading() {
+function ScheduleLoading() {
   return (
     <Card className="p-8">
-      <CardEyebrow>Dashboard</CardEyebrow>
+      <CardEyebrow>Schedule</CardEyebrow>
       <p className="mt-2 text-sm font-medium text-muted-foreground">
-        Loading your dashboard...
+        Loading your wake-up settings...
       </p>
     </Card>
   );
@@ -112,7 +115,7 @@ export default function DashboardPage() {
                 : "Phone verification required"}
           </p>
           <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-            Dashboard
+            Schedule a wake-up
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
             {loading
@@ -124,7 +127,7 @@ export default function DashboardPage() {
         </div>
 
         {loading ? (
-          <DashboardLoading />
+          <ScheduleLoading />
         ) : (
           <>
             {!phoneVerified ? (
@@ -140,7 +143,11 @@ export default function DashboardPage() {
                 userCity={me?.cityResolvedLabel ?? me?.city}
                 city={me?.city}
                 cityResolvedLabel={me?.cityResolvedLabel}
+                favoriteTeam={me?.favoriteTeam}
+                marketSymbols={me?.marketSymbols}
+                zodiacSign={me?.zodiacSign}
                 onCitySaved={handleCitySaved}
+                onCancelled={() => setRefreshKey((value) => value + 1)}
                 timezone={me?.timezone}
               />
             ) : (
@@ -148,6 +155,9 @@ export default function DashboardPage() {
                 disabled={!phoneVerified}
                 userCity={me?.city}
                 cityResolvedLabel={me?.cityResolvedLabel}
+                favoriteTeam={me?.favoriteTeam}
+                marketSymbols={me?.marketSymbols}
+                zodiacSign={me?.zodiacSign}
                 onCreated={() => setRefreshKey((value) => value + 1)}
                 onCitySaved={handleCitySaved}
               />

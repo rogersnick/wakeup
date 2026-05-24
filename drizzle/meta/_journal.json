@@ -8,11 +8,18 @@
       "when": 1779579845460,
       "tag": "0000_boring_mandarin",
       "breakpoints": true
-    {
+    },
       "idx": 1,
       "version": "7",
       "when": 1779585600000,
       "tag": "0001_display_name_snooze",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779590000000,
+      "tag": "0002_expand_script_modes",
       "breakpoints": true
     }
   ]

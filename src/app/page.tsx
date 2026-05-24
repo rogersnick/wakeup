@@ -36,7 +36,7 @@ function AuthCta({ signedOutLabel, signedInLabel }: {
 }
 
 const taglines = [
-  {a: "Wake", b: "Up" }
+  {a: "Alarm", b: "Call" }
 ];
 
 export default function Home() {
@@ -74,7 +74,7 @@ export default function Home() {
             </p>
 
             <div className="mt-12">
-              <AuthCta signedOutLabel="Begin" signedInLabel="Open dashboard" />
+              <AuthCta signedOutLabel="Begin" signedInLabel="Schedule a wake-up" />
             </div>
           </div>
 

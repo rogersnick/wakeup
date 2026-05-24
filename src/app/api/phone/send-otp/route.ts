@@ -2,11 +2,11 @@ import { and, desc, eq, gt, isNotNull, ne } from "drizzle-orm";
 import { jsonError, requireUserId } from "@/lib/api";
 import { getDb } from "@/lib/db";
 import { phoneOtps, users } from "@/lib/db/schema";
+import { normalizePhoneE164 } from "@/lib/phone";
 import {
   generateOtpCode,
   getOtpExpiry,
   hashOtpCode,
-  normalizePhoneE164,
 } from "@/lib/otp";
 import { sendOtpSms } from "@/lib/twilio";
 import { getOrCreateUser } from "@/lib/wakeup/schedule";
@@ -18,12 +18,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as { phone?: string; timezone?: string };
-    if (!body.phone) {
+    const body = (await request.json()) as {
+      phone?: string;
+      phoneE164?: string;
+      timezone?: string;
+    };
+    const rawPhone = body.phoneE164 ?? body.phone;
+    if (!rawPhone) {
       return jsonError("Phone number is required.");
     }
 
-    const phoneE164 = normalizePhoneE164(body.phone);
+    const phoneE164 = normalizePhoneE164(rawPhone);
     await getOrCreateUser(authResult.userId, body.timezone);
 
     const db = getDb();

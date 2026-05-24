@@ -1,66 +1,17 @@
 "use client";
 
-import { ChevronDown, RefreshCw } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ConfirmCancelWakeupModal } from "@/components/confirm-cancel-wakeup-modal";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardEyebrow,
   CardPanel,
 } from "@/components/ui/card";
-import { formatWakeupMessage, type WakeupDisplay } from "@/lib/wakeup/display";
-
-function ConfirmCancelModal({
-  onConfirm,
-  onDismiss,
-}: {
-  onConfirm: () => void;
-  onDismiss: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-      onClick={onDismiss}
-    >
-      <div
-        className="mx-4 w-full max-w-sm border-2 border-foreground bg-background p-8"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Confirm
-        </p>
-        <h2 className="mt-2 font-sans text-2xl font-extrabold tracking-tight text-foreground">
-          Cancel this wake-up?
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This call will be cancelled and won&apos;t ring. You can always
-          schedule a new one.
-        </p>
-        <div className="mt-6 flex gap-3">
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="hover:bg-foreground hover:text-red-500"
-            onClick={onConfirm}
-          >
-            Yes, cancel it
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={onDismiss}
-          >
-            Keep it
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { formatWakeupMessage, getWakeupModeLabel, type WakeupDisplay } from "@/lib/wakeup/display";
+import { isGeneratedMode, normalizeScriptMode } from "@/lib/wakeup/modes";
 
 const COLLAPSED_WAKEUP_COUNT = 3;
 
@@ -239,6 +190,7 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
 
   function renderWakeup(wakeup: WakeupDisplay) {
     const message = formatWakeupMessage(wakeup);
+    const mode = normalizeScriptMode(wakeup.scriptMode);
 
     return (
       <li key={wakeup.id}>
@@ -252,9 +204,11 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
               {wakeup.scheduledTimeLocal}
             </p>
             <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-              {wakeup.scriptMode === "dynamic" ? (
+              {isGeneratedMode(mode) ? (
                 <>
-                  <span className="font-semibold text-foreground">Weather report</span>
+                  <span className="font-semibold text-foreground">
+                    {getWakeupModeLabel(wakeup)}
+                  </span>
                   {wakeup.resolvedScriptText ? (
                     <>
                       {" "}
@@ -325,21 +279,7 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
   }
 
   return (
-    <Card className="p-8" variant="default">
-      <div className="flex items-center justify-between gap-3">
-        <div />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={loading}
-          onClick={() => setRefreshCount((value) => value + 1)}
-          className="gap-2"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+    <div>
 
       {loading ? <Alert className="mt-6">Loading...</Alert> : null}
       {error ? <Alert variant="error" className="mt-6">{error}</Alert> : null}
@@ -353,7 +293,7 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
       </ul>
 
       {pendingCancelId ? (
-        <ConfirmCancelModal
+        <ConfirmCancelWakeupModal
           onConfirm={() => {
             void cancelWakeUp(pendingCancelId);
             setPendingCancelId(null);
@@ -381,6 +321,6 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
             : `Show ${hiddenCount} more wake-up${hiddenCount === 1 ? "" : "s"}`}
         </Button>
       ) : null}
-    </Card>
+    </div>
   );
 }

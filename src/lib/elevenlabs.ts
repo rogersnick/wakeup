@@ -1,4 +1,5 @@
 import { requireEnv } from "@/lib/env";
+import { normalizeScriptForSpeech } from "@/lib/tts-format";
 
 export type ElevenLabsVoice = {
   voiceId: string;
@@ -68,7 +69,7 @@ export async function generateWakeUpAudio(
         Accept: "audio/mpeg",
       },
       body: JSON.stringify({
-        text: scriptText,
+        text: normalizeScriptForSpeech(scriptText),
         model_id:
           process.env.ELEVENLABS_MODEL_ID ?? "eleven_flash_v2_5",
       }),

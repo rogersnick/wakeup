@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardEyebrow, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { dispatchProfileUpdated } from "@/lib/profile-events";
+import { normalizePhoneE164 } from "@/lib/phone";
 
 type Props = {
   verifiedPhone?: string | null;
@@ -42,11 +43,12 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
     setMessage(null);
 
     try {
+      const phoneE164 = normalizePhoneE164(phone);
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const response = await fetch("/api/phone/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, timezone }),
+        body: JSON.stringify({ phoneE164, timezone }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -62,6 +64,10 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
   }
 
   async function verifyCode() {
+    if (!sentTo) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -70,13 +76,14 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
       const response = await fetch("/api/phone/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, phoneE164: sentTo }),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error ?? "Failed to verify code");
       }
       setMessage("Phone verified.");
+      dispatchProfileUpdated();
       onVerified();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to verify code");

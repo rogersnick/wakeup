@@ -4,12 +4,17 @@ import { addDays, addMinutes, format } from "date-fns";
 import {
   ChevronLeft,
   ChevronRight,
+  Clock,
+  MessageSquare,
+  Mic,
   Play,
   Search,
   Sparkles,
+  type LucideProps,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { CityInput } from "@/components/city-input";
+import { ProfilePreferencesInput } from "@/components/profile-preferences-input";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +33,15 @@ import {
 } from "@/lib/profile-events";
 import { cn } from "@/lib/utils";
 import { formatScheduleSummary } from "@/lib/wakeup/display";
+import {
+  MODE_DEFINITIONS,
+  formatModeSummary,
+  getMissingPrerequisites,
+  getModePrerequisites,
+  isGeneratedMode,
+  type UserProfileContext,
+  type WakeupScriptMode,
+} from "@/lib/wakeup/modes";
 
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -53,6 +67,9 @@ type Props = {
   disabled: boolean;
   userCity?: string | null;
   cityResolvedLabel?: string | null;
+  favoriteTeam?: string | null;
+  marketSymbols?: string | null;
+  zodiacSign?: string | null;
   onCreated: () => void;
   onCitySaved: () => void;
 };
@@ -111,8 +128,8 @@ function SegmentedControl<T extends string>({
             className={cn(
               "rounded-md px-4 py-2 text-sm font-medium transition-colors",
               isSelected
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-foreground hover:text-background",
               isDisabled && "cursor-not-allowed opacity-40",
             )}
           >
@@ -124,29 +141,84 @@ function SegmentedControl<T extends string>({
   );
 }
 
-function StepIndicator({ currentStep }: { currentStep: StepId }) {
-  const currentIndex = STEPS.findIndex((step) => step.id === currentStep);
+
+type StepIconComponent = (props: LucideProps) => React.ReactNode;
+
+const STEP_ICONS: Record<StepId, StepIconComponent> = {
+  when: Clock,
+  voice: Mic,
+  message: MessageSquare,
+  confirm: Sparkles,
+};
+
+function StepIndicator({
+  currentStep,
+  onStepClick,
+}: {
+  currentStep: StepId;
+  onStepClick: (step: StepId) => void;
+}) {
+  const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
   return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      {STEPS.map((step, index) => (
-        <div key={step.id} className="flex items-center gap-2">
-          <span
-            className={cn(
-              index <= currentIndex ? "text-foreground" : undefined,
-              index === currentIndex && "font-semibold",
-            )}
-          >
-            {step.label}
-          </span>
-          {index < STEPS.length - 1 ? (
-            <span aria-hidden className="text-border">
-              /
-            </span>
-          ) : null}
-        </div>
-      ))}
-    </div>
+    <nav aria-label="Schedule steps" className="flex items-center">
+      {STEPS.map((step, index) => {
+        const Icon = STEP_ICONS[step.id];
+        const isActive = index === currentIndex;
+        const isPast = index < currentIndex;
+        const isFuture = index > currentIndex;
+
+        return (
+          <Fragment key={step.id}>
+            <button
+              type="button"
+              disabled={!isPast}
+              onClick={() => { if (isPast) onStepClick(step.id); }}
+              aria-current={isActive ? "step" : undefined}
+              className={cn(
+                "group flex items-center gap-2.5 px-3 py-2 transition-colors duration-100",
+                isPast ? "cursor-pointer" : "cursor-default",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors duration-100",
+                  isActive
+                    ? "border-[#ff6a00] bg-[#ff6a00]/10 text-[#ff6a00]"
+                    : isPast
+                    ? "border-foreground bg-foreground text-background group-hover:border-[#ff6a00] group-hover:bg-transparent group-hover:text-[#ff6a00]"
+                    : "border-border text-muted-foreground",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+              </span>
+              <span
+                className={cn(
+                  "font-mono text-xs font-medium uppercase tracking-widest transition-colors duration-100",
+                  isActive
+                    ? "text-[#ff6a00]"
+                    : isPast
+                    ? "text-foreground group-hover:text-[#ff6a00]"
+                    : "text-muted-foreground",
+                )}
+              >
+                {step.label}
+              </span>
+            </button>
+
+            {index < STEPS.length - 1 ? (
+              <div
+                aria-hidden
+                className={cn(
+                  "h-px min-w-6 flex-1 transition-colors duration-300",
+                  isFuture || isActive ? "bg-border" : "bg-foreground",
+                )}
+              />
+            ) : null}
+          </Fragment>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -164,7 +236,7 @@ function VoiceCard({
 }: {
   voice: Voice;
   selected: boolean;
-  scriptMode: "static" | "dynamic";
+  scriptMode: WakeupScriptMode;
   previewLoading: boolean;
   previewReady: boolean;
   previewAudioUrl: string | null;
@@ -320,6 +392,9 @@ export function ScheduleForm({
   disabled,
   userCity,
   cityResolvedLabel,
+  favoriteTeam,
+  marketSymbols,
+  zodiacSign,
   onCreated,
   onCitySaved,
 }: Props) {
@@ -331,7 +406,7 @@ export function ScheduleForm({
   const [scheduledTimeLocal, setScheduledTimeLocal] = useState("07:00");
   const [customTime, setCustomTime] = useState(false);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [scriptMode, setScriptMode] = useState<"static" | "dynamic">("static");
+  const [scriptMode, setScriptMode] = useState<WakeupScriptMode>("static");
   const [scriptText, setScriptText] = useState<string>(MESSAGE_PRESETS[0].text);
   const [voices, setVoices] = useState<Voice[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState("");
@@ -347,6 +422,7 @@ export function ScheduleForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showCityEditor, setShowCityEditor] = useState(false);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
 
   const timezone = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -434,7 +510,7 @@ export function ScheduleForm({
   useEffect(() => {
     function openCityEditor() {
       setStep("message");
-      setScriptMode("dynamic");
+      setScriptMode("weather_report");
       setShowCityEditor(true);
     }
 
@@ -443,6 +519,11 @@ export function ScheduleForm({
       window.removeEventListener(REQUEST_CITY_CHANGE_EVENT, openCityEditor);
     };
   }, []);
+
+  function handleProfileSaved() {
+    setShowProfileEditor(false);
+    onCitySaved();
+  }
 
   function handleCityCancel() {
     setShowCityEditor(false);
@@ -480,8 +561,26 @@ export function ScheduleForm({
     setCustomTime(true);
   }
 
+  const profileContext = useMemo<UserProfileContext>(
+    () => ({
+      city: userCity,
+      cityResolvedLabel,
+      favoriteTeam,
+      marketSymbols,
+      zodiacSign: zodiacSign as UserProfileContext["zodiacSign"],
+    }),
+    [userCity, cityResolvedLabel, favoriteTeam, marketSymbols, zodiacSign],
+  );
+
   const weatherCityLabel = cityResolvedLabel ?? userCity?.trim() ?? null;
   const hasValidWeatherCity = Boolean(cityResolvedLabel);
+  const modePrerequisites = getModePrerequisites(scriptMode);
+  const missingPrerequisites = getMissingPrerequisites(scriptMode, profileContext);
+  const needsCity = modePrerequisites.includes("city");
+  const needsProfilePrefs = modePrerequisites.some((item) => item !== "city");
+  const selectedModeDefinition = MODE_DEFINITIONS.find(
+    (definition) => definition.id === scriptMode,
+  );
 
   function canAdvanceFromWhen() {
     if (type === "one_shot") {
@@ -491,10 +590,22 @@ export function ScheduleForm({
   }
 
   function canAdvanceFromMessage() {
-    if (scriptMode === "dynamic") {
-      return hasValidWeatherCity;
+    if (isGeneratedMode(scriptMode)) {
+      return missingPrerequisites.length === 0;
     }
     return scriptText.trim().length > 0;
+  }
+
+  function selectScriptMode(mode: WakeupScriptMode) {
+    setScriptMode(mode);
+    clearPreview();
+    const missing = getMissingPrerequisites(mode, profileContext);
+    if (missing.includes("city")) {
+      setShowCityEditor(true);
+    }
+    if (missing.some((item) => item !== "city")) {
+      setShowProfileEditor(true);
+    }
   }
 
   function clearPreview() {
@@ -533,7 +644,7 @@ export function ScheduleForm({
       return;
     }
 
-    if (scriptMode === "dynamic" && !hasValidWeatherCity) {
+    if (isGeneratedMode(scriptMode) && missingPrerequisites.length > 0) {
       return;
     }
 
@@ -543,13 +654,15 @@ export function ScheduleForm({
 
     try {
       const response = await fetch(
-        scriptMode === "dynamic" ? "/api/voices/preview-dynamic" : "/api/voices/preview",
+        isGeneratedMode(scriptMode)
+          ? "/api/voices/preview-dynamic"
+          : "/api/voices/preview",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(
-            scriptMode === "dynamic"
-              ? { voiceId: selectedVoiceId }
+            isGeneratedMode(scriptMode)
+              ? { voiceId: selectedVoiceId, scriptMode }
               : { scriptText, voiceId: selectedVoiceId },
           ),
         },
@@ -560,7 +673,7 @@ export function ScheduleForm({
         throw new Error(data.error ?? "Failed to generate preview");
       }
 
-      if (scriptMode === "dynamic") {
+      if (isGeneratedMode(scriptMode)) {
         const scriptHeader = response.headers.get("X-Wakeup-Script");
         if (scriptHeader) {
           setPreviewScriptText(decodeURIComponent(scriptHeader));
@@ -580,7 +693,7 @@ export function ScheduleForm({
   }
 
   async function playPreview(voiceId: string) {
-    if (!voiceId || scriptMode === "dynamic" || scriptText.trim().length === 0) {
+    if (!voiceId || isGeneratedMode(scriptMode) || scriptText.trim().length === 0) {
       return;
     }
 
@@ -629,7 +742,7 @@ export function ScheduleForm({
           scheduledDate: type === "one_shot" ? scheduledDate : null,
           scheduledTimeLocal,
           recurrence: type === "recurring" ? { days } : null,
-          scriptText: scriptMode === "dynamic" ? "" : scriptText,
+          scriptText: isGeneratedMode(scriptMode) ? "" : scriptText,
           scriptMode,
           voiceId: selectedVoiceId || undefined,
           timezone,
@@ -677,37 +790,26 @@ export function ScheduleForm({
       : step === "message"
         ? "Choose the message we will deliver."
         : step === "voice"
-          ? scriptMode === "dynamic"
-            ? "Choose who delivers your weather report."
+          ? isGeneratedMode(scriptMode)
+            ? `Choose who delivers your ${selectedModeDefinition?.label.toLowerCase() ?? "generated message"}.`
             : "Search and choose a voice. You can edit the message next."
           : "Make sure everything looks right.";
 
   return (
-    <Card className="p-0" variant="primary">
-      <div className="border-b-2 border-border px-8 py-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <StepIndicator currentStep={step} />
-            <CardTitle className="mt-3 text-2xl sm:text-3xl">{stepTitle}</CardTitle>
-            <CardDescription className="mt-1 text-base">{stepDescription}</CardDescription>
-          </div>
-          <div className="flex flex-col items-end gap-3">
+    <div className="grid gap-4">
+      <StepIndicator currentStep={step} onStepClick={setStep} />
+
+      <Card className="p-0" variant="primary">
+        <div className="border-b-2 border-border px-8 py-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl sm:text-3xl">{stepTitle}</CardTitle>
+              <CardDescription className="mt-1 text-base">{stepDescription}</CardDescription>
+            </div>
+            <div className="flex flex-col items-end gap-3">
             <p className="text-3xl font-extrabold tracking-tight text-primary sm:text-4xl">
               {formatTimeLabel(scheduledTimeLocal)}
             </p>
-            {step === "message" &&
-            ((scriptMode === "static" && scriptText.trim().length > 0) ||
-              (scriptMode === "dynamic" && hasValidWeatherCity && !showCityEditor)) ? (
-              <MessagePreviewPanel
-                selectedVoiceName={selectedVoice?.name ?? "Default voice"}
-                loading={messagePreviewLoading}
-                disabled={!selectedVoiceId}
-                audioUrl={previewAudioUrl}
-                scriptText={previewScriptText}
-                onPreview={() => void playMessagePreview()}
-                onVoiceClick={() => setStep("voice")}
-              />
-            ) : null}
           </div>
         </div>
       </div>
@@ -851,21 +953,35 @@ export function ScheduleForm({
 
           {step === "message" ? (
             <div className="grid gap-8">
-              <Section title="Message">
-                <SegmentedControl
-                  value={scriptMode}
-                  onChange={(mode) => {
-                    setScriptMode(mode);
-                    clearPreview();
-                    if (mode === "dynamic" && !hasValidWeatherCity) {
-                      setShowCityEditor(true);
-                    }
-                  }}
-                  options={[
-                    { value: "static", label: "Write my own" },
-                    { value: "dynamic", label: "Weather report" },
-                  ]}
-                />
+              <Section
+                title="Message"
+                description="Pick what we say on your wake-up call. Generated options are fresh each time."
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {MODE_DEFINITIONS.map((definition) => {
+                    const selected = scriptMode === definition.id;
+                    return (
+                      <button
+                        key={definition.id}
+                        type="button"
+                        onClick={() => selectScriptMode(definition.id)}
+                        className={cn(
+                          "border-2 p-4 text-left transition-colors",
+                          selected
+                            ? "border-[#ff6a00] bg-[#ff6a00]/10"
+                            : "border-border hover:border-foreground",
+                        )}
+                      >
+                        <span className="block text-base font-semibold text-foreground">
+                          {definition.label}
+                        </span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          {definition.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </Section>
 
               {scriptMode === "static" ? (
@@ -906,42 +1022,96 @@ export function ScheduleForm({
                 </Section>
               ) : (
                 <Section
-                  title="Weather report"
-                  description={
-                    hasValidWeatherCity
-                      ? `Includes today's weather in ${weatherCityLabel}. Generated fresh each call.`
-                      : "Add your city to include local weather in your wake-up."
-                  }
+                  title={selectedModeDefinition?.label ?? "Generated message"}
+                  description={formatModeSummary(scriptMode, profileContext)}
                 >
-                  {!hasValidWeatherCity || showCityEditor ? (
-                    <CityInput
-                      key={userCity ?? "unset"}
-                      variant="inline"
-                      city={userCity}
-                      cityResolvedLabel={cityResolvedLabel}
-                      onSaved={handleCitySaved}
+                  {needsCity ? (
+                    !hasValidWeatherCity || showCityEditor ? (
+                      <CityInput
+                        key={userCity ?? "unset"}
+                        variant="inline"
+                        city={userCity}
+                        cityResolvedLabel={cityResolvedLabel}
+                        onSaved={handleCitySaved}
+                        onCancel={
+                          hasValidWeatherCity ? handleCityCancel : undefined
+                        }
+                      />
+                    ) : (
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-sm text-muted-foreground">
+                          Location: {weatherCityLabel}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowCityEditor(true)}
+                        >
+                          Change city
+                        </Button>
+                      </div>
+                    )
+                  ) : null}
+
+                  {needsProfilePrefs &&
+                  (showProfileEditor ||
+                    missingPrerequisites.some((item) => item !== "city")) ? (
+                    <ProfilePreferencesInput
+                      profile={profileContext}
+                      required={modePrerequisites.filter((item) => item !== "city")}
+                      onSaved={handleProfileSaved}
                       onCancel={
-                        hasValidWeatherCity ? handleCityCancel : undefined
+                        missingPrerequisites.length === 0
+                          ? () => setShowProfileEditor(false)
+                          : undefined
                       }
                     />
-                  ) : (
+                  ) : needsProfilePrefs ? (
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <p className="text-sm text-muted-foreground">
-                        Weather for {weatherCityLabel}
+                        {scriptMode === "sports_scores"
+                          ? `Team: ${favoriteTeam}`
+                          : scriptMode === "market_brief"
+                            ? `Symbols: ${marketSymbols}`
+                            : scriptMode === "horoscope"
+                              ? `Sign: ${zodiacSign}`
+                              : "Profile ready"}
                       </p>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setShowCityEditor(true)}
+                        onClick={() => setShowProfileEditor(true)}
                       >
-                        Change city
+                        Edit
                       </Button>
                     </div>
-                  )}
+                  ) : null}
 
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Generated fresh each call.
+                  </p>
                 </Section>
               )}
+
+              {((scriptMode === "static" && scriptText.trim().length > 0) ||
+                (isGeneratedMode(scriptMode) &&
+                  missingPrerequisites.length === 0 &&
+                  !showCityEditor &&
+                  !showProfileEditor)) ? (
+                <Section title="Preview">
+                  <MessagePreviewPanel
+                    selectedVoiceName={selectedVoice?.name ?? "Default voice"}
+                    loading={messagePreviewLoading}
+                    disabled={!selectedVoiceId}
+                    audioUrl={previewAudioUrl}
+                    scriptText={previewScriptText}
+                    onPreview={() => void playMessagePreview()}
+                    onVoiceClick={() => setStep("voice")}
+                  />
+                </Section>
+              ) : null}
             </div>
           ) : null}
 
@@ -950,8 +1120,8 @@ export function ScheduleForm({
               <Section
                 title="Voice"
                 description={
-                  scriptMode === "dynamic"
-                    ? "Choose who delivers your weather report."
+                  isGeneratedMode(scriptMode)
+                    ? `Choose who delivers your ${selectedModeDefinition?.label.toLowerCase() ?? "generated message"}.`
                     : "Choose a voice and preview your script."
                 }
               >
@@ -1055,8 +1225,8 @@ export function ScheduleForm({
                   <div>
                     <CardEyebrow>Message</CardEyebrow>
                     <dd className="mt-2 text-foreground">
-                      {scriptMode === "dynamic" ? (
-                        <>Real-time Weather report for {weatherCityLabel}</>
+                      {isGeneratedMode(scriptMode) ? (
+                        <>{formatModeSummary(scriptMode, profileContext)}</>
                       ) : (
                         <>&ldquo;{scriptText}&rdquo;</>
                       )}
@@ -1093,7 +1263,7 @@ export function ScheduleForm({
                 size="lg"
                 disabled={loading}
                 onClick={() => void submit()}
-                className="gap-2"
+                className="gap-2 hover:text-green-400"
               >
                 {loading ? "Scheduling..." : "Schedule wake-up"}
                 {!loading ? <Sparkles className="h-4 w-4" /> : null}
@@ -1123,5 +1293,6 @@ export function ScheduleForm({
         </div>
       </div>
     </Card>
+    </div>
   );
 }
