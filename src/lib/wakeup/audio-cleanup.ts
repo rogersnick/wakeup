@@ -11,6 +11,14 @@ export async function deleteWakeUpAudio(audioBlobUrl: string) {
   await del(audioBlobUrl);
 }
 
+export async function deleteChallengeIntroAudio(challengeAudioBlobUrl: string) {
+  if (!challengeAudioBlobUrl) {
+    return;
+  }
+
+  await del(challengeAudioBlobUrl);
+}
+
 function shouldCleanupAudio(wakeup: Wakeup): boolean {
   if (wakeup.status === "calling") {
     return false;
@@ -30,21 +38,35 @@ function shouldCleanupAudio(wakeup: Wakeup): boolean {
 export async function cleanupWakeUpAudio(
   wakeupId: string,
   audioBlobUrl: string | null,
+  challengeAudioBlobUrl?: string | null,
 ) {
-  if (!audioBlobUrl) {
-    return;
+  if (audioBlobUrl) {
+    try {
+      await deleteWakeUpAudio(audioBlobUrl);
+    } catch (error) {
+      console.error(`Failed to delete blob for wake-up ${wakeupId}`, error);
+    }
   }
 
-  try {
-    await deleteWakeUpAudio(audioBlobUrl);
-  } catch (error) {
-    console.error(`Failed to delete blob for wake-up ${wakeupId}`, error);
+  if (challengeAudioBlobUrl) {
+    try {
+      await deleteChallengeIntroAudio(challengeAudioBlobUrl);
+    } catch (error) {
+      console.error(
+        `Failed to delete challenge intro blob for wake-up ${wakeupId}`,
+        error,
+      );
+    }
   }
 
   const db = getDb();
   await db
     .update(wakeups)
-    .set({ audioBlobUrl: null, updatedAt: new Date() })
+    .set({
+      audioBlobUrl: null,
+      challengeAudioBlobUrl: null,
+      updatedAt: new Date(),
+    })
     .where(eq(wakeups.id, wakeupId));
 }
 
@@ -58,5 +80,9 @@ export async function maybeCleanupWakeUpAudio(wakeupId: string) {
     return;
   }
 
-  await cleanupWakeUpAudio(wakeup.id, wakeup.audioBlobUrl);
+  await cleanupWakeUpAudio(
+    wakeup.id,
+    wakeup.audioBlobUrl,
+    wakeup.challengeAudioBlobUrl,
+  );
 }

@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -100,6 +101,18 @@ export const wakeups = pgTable(
     snoozeCount: integer("snooze_count").notNull().default(0),
     lastCallSid: text("last_call_sid"),
     lastCallStatus: text("last_call_status"),
+    challengeEnabled: boolean("challenge_enabled").notNull().default(false),
+    challengeType: text("challenge_type"),
+    challengeAudioBlobUrl: text("challenge_audio_blob_url"),
+    challengeState: jsonb("challenge_state").$type<{
+      type: "quick_math" | "pattern_continue" | "memory_echo";
+      prompt: string;
+      spokenPrompt: string;
+      answer: string;
+      attempts: number;
+      promptAudioUrl?: string | null;
+      digits?: number[];
+    } | null>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

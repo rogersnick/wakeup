@@ -1,12 +1,41 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { WakeUpStatsCard } from "@/components/wakeup-stats-card";
 import { WakeupList } from "@/components/wakeup-list";
 import { Button } from "@/components/ui/button";
+import type { WakeUpStats } from "@/lib/wakeup/stats";
 
 export default function WakeupsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [stats, setStats] = useState<WakeUpStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchStats() {
+      try {
+        const response = await fetch("/api/wakeups/stats");
+        if (cancelled || !response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { stats: WakeUpStats };
+        setStats(data.stats);
+      } catch {
+        if (!cancelled) {
+          setStats(null);
+        }
+      }
+    }
+
+    void fetchStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
 
   return (
     <main className="bg-muted min-h-[calc(100vh-4rem)]">
@@ -37,6 +66,8 @@ export default function WakeupsPage() {
         </div>
 
         <WakeupList refreshKey={refreshKey} />
+
+        {stats ? <WakeUpStatsCard stats={stats} /> : null}
       </div>
     </main>
   );

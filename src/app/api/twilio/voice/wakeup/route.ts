@@ -48,7 +48,11 @@ export async function POST(request: Request) {
     return new Response("Wake-up audio not ready", { status: 503 });
   }
 
-  const twiml = buildWakeUpTwiml(wakeup.audioBlobUrl, wakeup.id);
+  const twiml = buildWakeUpTwiml(wakeup.audioBlobUrl, wakeup.id, {
+    challengeEnabled: wakeup.challengeEnabled,
+    challengePrompt: wakeup.challengeState?.prompt,
+    challengePromptAudioUrl: wakeup.challengeState?.promptAudioUrl,
+  });
   return new Response(twiml, {
     headers: { "Content-Type": "text/xml" },
   });

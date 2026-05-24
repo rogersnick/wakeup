@@ -9,6 +9,7 @@ import {
 } from "@/lib/wakeup/recurrence";
 import type { WakeupScriptMode, WakeupScriptModeInput } from "@/lib/wakeup/modes";
 import { isGeneratedMode } from "@/lib/wakeup/modes";
+import { normalizeChallengeType } from "@/lib/wakeup/challenge";
 import {
   sanitizeContentConfig,
   userToProfileContext,
@@ -31,6 +32,8 @@ export type ScheduleWakeupInput = {
   timezone?: string;
   maxAttempts?: number;
   retryIntervalMinutes?: number;
+  challengeEnabled?: boolean;
+  challengeType?: string | null;
 };
 
 export async function getOrCreateUser(userId: string, timezone?: string) {
@@ -138,6 +141,10 @@ export async function scheduleWakeup(input: ScheduleWakeupInput) {
       attemptCount: 0,
       maxAttempts: input.maxAttempts ?? 3,
       retryIntervalMinutes: input.retryIntervalMinutes ?? 5,
+      challengeEnabled: input.challengeEnabled ?? false,
+      challengeType: input.challengeEnabled
+        ? normalizeChallengeType(input.challengeType)
+        : null,
     })
     .returning();
 

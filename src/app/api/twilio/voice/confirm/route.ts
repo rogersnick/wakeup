@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { getAppUrl } from "@/lib/env";
 import { getDb } from "@/lib/db";
 import { wakeupAttempts } from "@/lib/db/schema";
-import { validateTwilioRequest } from "@/lib/twilio";
+import { validateTwilioRequest, SNOOZE_DIGIT, CONFIRM_DIGIT } from "@/lib/twilio";
 import {
   markWakeUpAttemptFailed,
   markWakeUpConfirmed,
@@ -59,14 +59,14 @@ export async function POST(request: Request) {
       );
   }
 
-  if (digits === "1") {
+  if (digits === CONFIRM_DIGIT) {
     await markWakeUpConfirmed(wakeupId);
     return new Response(SILENT_HANGUP_TWIML, {
       headers: { "Content-Type": "text/xml" },
     });
   }
 
-  if (digits === "2") {
+  if (digits === SNOOZE_DIGIT) {
     const snoozed = await snoozeWakeUp(wakeupId);
     if (snoozed) {
       return new Response(SILENT_HANGUP_TWIML, {

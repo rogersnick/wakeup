@@ -43,7 +43,7 @@ function formatAttemptHistory(attempts: WakeupAttemptSummary[]) {
   }
 
   const lastAttempt = attempts[attempts.length - 1];
-  if (lastAttempt.gatherResult === "2") {
+  if (lastAttempt.gatherResult === "9") {
     return `${callLabel} · last snoozed`;
   }
 

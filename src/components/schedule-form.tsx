@@ -12,7 +12,7 @@ import {
   Sparkles,
   type LucideProps,
 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CityInput } from "@/components/city-input";
 import { ProfilePreferencesInput } from "@/components/profile-preferences-input";
 import { Alert } from "@/components/ui/alert";
@@ -42,6 +42,35 @@ import {
   type UserProfileContext,
   type WakeupScriptMode,
 } from "@/lib/wakeup/modes";
+import type { ChallengeType } from "@/lib/wakeup/challenge";
+import {
+  formatChallengePreviewLabel,
+  generateChallenge,
+  buildChallengeIntroScript,
+  type ChallengePayload,
+} from "@/lib/wakeup/challenge";
+
+const CHALLENGE_OPTIONS: {
+  value: ChallengeType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "quick_math",
+    label: "Quick math",
+    description: "Solve a tiny arithmetic problem on your keypad.",
+  },
+  {
+    value: "pattern_continue",
+    label: "Pattern continue",
+    description: "Complete a short number pattern before confirming.",
+  },
+  {
+    value: "memory_echo",
+    label: "Memory echo",
+    description: "Hear three numbers — press the middle one.",
+  },
+];
 
 const VOICE_PREVIEW_SAMPLE_TEXT =
   "Good morning! This is a preview of your wake-up call. Time to get up and start your day.";
@@ -172,7 +201,10 @@ function StepIndicator({
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
   return (
-    <nav aria-label="Schedule steps" className="flex items-center">
+    <nav
+      aria-label="Schedule steps"
+      className="grid grid-cols-2 gap-2 md:flex md:items-center"
+    >
       {STEPS.map((step, index) => {
         const Icon = STEP_ICONS[step.id];
         const isActive = index === currentIndex;
@@ -187,7 +219,7 @@ function StepIndicator({
               onClick={() => { if (isPast) onStepClick(step.id); }}
               aria-current={isActive ? "step" : undefined}
               className={cn(
-                "group flex items-center gap-2.5 px-3 py-2 transition-colors duration-100",
+                "group flex w-full items-center gap-2.5 px-3 py-2 transition-colors duration-100 md:w-auto",
                 isPast ? "cursor-pointer" : "cursor-default",
               )}
             >
@@ -221,7 +253,7 @@ function StepIndicator({
               <div
                 aria-hidden
                 className={cn(
-                  "h-px min-w-6 flex-1 transition-colors duration-300",
+                  "hidden h-px min-w-6 flex-1 transition-colors duration-300 md:block",
                   isFuture || isActive ? "bg-border" : "bg-foreground",
                 )}
               />
@@ -335,6 +367,168 @@ function VoiceCard({
   );
 }
 
+function ConfirmCallPreviewPanel({
+  loading,
+  disabled,
+  payload,
+  challengeEnabled,
+  onPreview,
+}: {
+  loading: boolean;
+  disabled: boolean;
+  payload: {
+    scriptText: string;
+    audioUrl: string;
+    introScriptText: string | null;
+    introAudioUrl: string | null;
+    challenge: ChallengePayload | null;
+  } | null;
+  challengeEnabled: boolean;
+  onPreview: () => void;
+}) {
+  const messageAudioRef = useRef<HTMLAudioElement | null>(null);
+  const challengeLabel =
+    CHALLENGE_OPTIONS.find((option) => option.value === payload?.challenge?.type)
+      ?.label ?? "Challenge";
+
+  useEffect(() => {
+    if (!payload) {
+      return;
+    }
+
+    if (payload.introAudioUrl) {
+      const introAudio = new Audio(payload.introAudioUrl);
+      introAudio.onended = () => {
+        void messageAudioRef.current?.play();
+      };
+      void introAudio.play();
+
+      return () => {
+        introAudio.onended = null;
+        introAudio.pause();
+      };
+    }
+
+    void messageAudioRef.current?.play();
+  }, [payload]);
+
+  return (
+    <div className="grid gap-4 border-2 border-border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-base font-semibold text-foreground">
+            Full call preview
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Sample message and challenge for this schedule. The live call may
+            vary slightly.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onPreview}
+          disabled={disabled || loading}
+          className="gap-2"
+        >
+          {loading ? "Generating..." : "Preview call flow"}
+          {!loading ? <Play className="h-4 w-4" /> : null}
+        </Button>
+      </div>
+
+      {payload ? (
+        <dl className="grid gap-4 text-sm">
+          {challengeEnabled && payload.introScriptText ? (
+            <div className="grid gap-2">
+              <dt className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                1. Challenge prompt
+              </dt>
+              <dd className="text-foreground leading-6">
+                &ldquo;{payload.introScriptText}&rdquo;
+              </dd>
+              {payload.introAudioUrl ? (
+                <dd>
+                  <audio
+                    key={payload.introAudioUrl}
+                    src={payload.introAudioUrl}
+                    controls
+                    className="w-full"
+                  >
+                    <track kind="captions" />
+                  </audio>
+                </dd>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="grid gap-2">
+            <dt className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              {challengeEnabled ? "2. Wake-up message" : "1. Wake-up message"}
+            </dt>
+            <dd className="text-foreground leading-6">
+              &ldquo;{payload.scriptText}&rdquo;
+            </dd>
+            <dd>
+              <audio
+                ref={messageAudioRef}
+                key={payload.audioUrl}
+                src={payload.audioUrl}
+                controls
+                className="w-full"
+              >
+                <track kind="captions" />
+              </audio>
+            </dd>
+          </div>
+
+          {challengeEnabled && payload.challenge ? (
+            <div className="grid gap-2 border-t-2 border-border pt-4">
+              <dt className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                3. Wake-up challenge ({challengeLabel})
+              </dt>
+              <dd className="text-foreground leading-6">{payload.challenge.prompt}</dd>
+              <dd className="grid gap-1 rounded-md bg-muted p-3 text-sm text-foreground">
+                <span>
+                  <span className="font-medium">Expected keypad digit:</span>{" "}
+                  {payload.challenge.answer}
+                </span>
+                <span className="text-muted-foreground">
+                  Solve it to confirm you are awake. Press 9 to snooze. One retry
+                  if you miss it.
+                </span>
+              </dd>
+            </div>
+          ) : null}
+
+          {!challengeEnabled ? (
+            <div className="grid gap-2 border-t-2 border-border pt-4">
+              <dt className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                2. Confirm or snooze
+              </dt>
+              <dd className="text-foreground leading-6">
+                Press <span className="font-semibold">1</span> to confirm you are
+                awake, or <span className="font-semibold">9</span> to snooze for 5
+                minutes.
+              </dd>
+            </div>
+          ) : (
+            <div className="grid gap-2 border-t-2 border-border pt-4">
+              <dt className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                4. You are awake
+              </dt>
+              <dd className="text-foreground leading-6">
+                Solve the challenge and you will hear a congratulations message.
+                No extra confirmation needed.
+              </dd>
+            </div>
+          )}
+        </dl>
+      ) : null}
+    </div>
+  );
+}
+
 function MessagePreviewPanel({
   selectedVoiceName,
   loading,
@@ -424,6 +618,16 @@ export function ScheduleForm({
   const [success, setSuccess] = useState<string | null>(null);
   const [showCityEditor, setShowCityEditor] = useState(false);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
+  const [challengeEnabled, setChallengeEnabled] = useState(false);
+  const [challengeType, setChallengeType] = useState<ChallengeType>("quick_math");
+  const [confirmPreviewLoading, setConfirmPreviewLoading] = useState(false);
+  const [confirmPreview, setConfirmPreview] = useState<{
+    scriptText: string;
+    audioUrl: string;
+    introScriptText: string | null;
+    introAudioUrl: string | null;
+    challenge: ChallengePayload | null;
+  } | null>(null);
 
   const timezone = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -507,6 +711,31 @@ export function ScheduleForm({
       URL.revokeObjectURL(previewAudioUrl);
     };
   }, [previewAudioUrl]);
+
+  useEffect(() => {
+    if (!confirmPreview?.audioUrl && !confirmPreview?.introAudioUrl) {
+      return;
+    }
+
+    return () => {
+      if (confirmPreview?.audioUrl) {
+        URL.revokeObjectURL(confirmPreview.audioUrl);
+      }
+      if (confirmPreview?.introAudioUrl) {
+        URL.revokeObjectURL(confirmPreview.introAudioUrl);
+      }
+    };
+  }, [confirmPreview?.audioUrl, confirmPreview?.introAudioUrl]);
+
+  function clearConfirmPreview() {
+    if (confirmPreview?.audioUrl) {
+      URL.revokeObjectURL(confirmPreview.audioUrl);
+    }
+    if (confirmPreview?.introAudioUrl) {
+      URL.revokeObjectURL(confirmPreview.introAudioUrl);
+    }
+    setConfirmPreview(null);
+  }
 
   useEffect(() => {
     function openCityEditor() {
@@ -636,6 +865,103 @@ export function ScheduleForm({
     }
   }
 
+  async function playConfirmPreview() {
+    if (!selectedVoiceId) {
+      return;
+    }
+
+    if (scriptMode === "static" && scriptText.trim().length === 0) {
+      return;
+    }
+
+    if (isGeneratedMode(scriptMode) && missingPrerequisites.length > 0) {
+      return;
+    }
+
+    setConfirmPreviewLoading(true);
+    if (confirmPreview?.audioUrl) {
+      URL.revokeObjectURL(confirmPreview.audioUrl);
+    }
+    if (confirmPreview?.introAudioUrl) {
+      URL.revokeObjectURL(confirmPreview.introAudioUrl);
+    }
+    setConfirmPreview(null);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        isGeneratedMode(scriptMode)
+          ? "/api/voices/preview-dynamic"
+          : "/api/voices/preview",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            isGeneratedMode(scriptMode)
+              ? { voiceId: selectedVoiceId, scriptMode }
+              : { scriptText, voiceId: selectedVoiceId },
+          ),
+        },
+      );
+
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error ?? "Failed to generate preview");
+      }
+
+      let resolvedScriptText = scriptText.trim();
+      if (isGeneratedMode(scriptMode)) {
+        const scriptHeader = response.headers.get("X-Wakeup-Script");
+        if (scriptHeader) {
+          resolvedScriptText = decodeURIComponent(scriptHeader);
+        }
+      }
+
+      const audioBlob = await response.blob();
+      const challenge = challengeEnabled
+        ? generateChallenge({
+            type: challengeType,
+            scriptText: resolvedScriptText,
+          })
+        : null;
+
+      let introScriptText: string | null = null;
+      let introAudioUrl: string | null = null;
+
+      if (challenge) {
+        introScriptText = buildChallengeIntroScript(challenge);
+        const introResponse = await fetch("/api/voices/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            scriptText: introScriptText,
+            voiceId: selectedVoiceId,
+          }),
+        });
+
+        if (!introResponse.ok) {
+          const data = (await introResponse.json()) as { error?: string };
+          throw new Error(data.error ?? "Failed to generate challenge intro");
+        }
+
+        const introBlob = await introResponse.blob();
+        introAudioUrl = URL.createObjectURL(introBlob);
+      }
+
+      setConfirmPreview({
+        scriptText: resolvedScriptText,
+        audioUrl: URL.createObjectURL(audioBlob),
+        introScriptText,
+        introAudioUrl,
+        challenge,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate preview");
+    } finally {
+      setConfirmPreviewLoading(false);
+    }
+  }
+
   async function playMessagePreview() {
     if (!selectedVoiceId) {
       return;
@@ -755,6 +1081,8 @@ export function ScheduleForm({
           scriptMode,
           voiceId: selectedVoiceId || undefined,
           timezone,
+          challengeEnabled,
+          challengeType: challengeEnabled ? challengeType : null,
         }),
       });
       const data = await response.json();
@@ -809,7 +1137,7 @@ export function ScheduleForm({
       <StepIndicator currentStep={step} onStepClick={setStep} />
 
       <Card className="p-0" variant="primary">
-        <div className="border-b-2 border-border px-8 py-6">
+        <div className="border-b-2 border-border px-4 py-6 sm:px-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <CardTitle className="text-2xl sm:text-3xl">{stepTitle}</CardTitle>
@@ -823,7 +1151,7 @@ export function ScheduleForm({
         </div>
       </div>
 
-      <div className="px-8 py-8">
+      <div className="px-4 py-6 sm:px-8 sm:py-8">
         <div className={cn("mx-auto", step === "voice" ? "max-w-6xl" : "max-w-4xl")}>
           {step === "when" ? (
             <div className="grid gap-8">
@@ -1247,11 +1575,83 @@ export function ScheduleForm({
                       {selectedVoice?.name ?? "Default voice"}
                     </dd>
                   </div>
+                  <div>
+                    <CardEyebrow>Wake-up challenge</CardEyebrow>
+                    <dd className="mt-2 text-foreground">
+                      {challengeEnabled
+                        ? formatChallengePreviewLabel(challengeType)
+                        : "Off"}
+                    </dd>
+                  </div>
                 </dl>
               </CardPanel>
 
+              <Section
+                title="Wake-up challenge"
+                description="Optional proof-of-life check after your message plays."
+              >
+                <label className="flex items-center gap-3 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={challengeEnabled}
+                    onChange={(event) => {
+                      setChallengeEnabled(event.target.checked);
+                      clearConfirmPreview();
+                    }}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  Require a quick keypad challenge before I can confirm awake
+                </label>
+
+                {challengeEnabled ? (
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    {CHALLENGE_OPTIONS.map((option) => {
+                      const selected = challengeType === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setChallengeType(option.value);
+                            clearConfirmPreview();
+                          }}
+                          className={cn(
+                            "border-2 p-4 text-left transition-colors",
+                            selected
+                              ? "border-[#ff6a00] bg-[#ff6a00]/10"
+                              : "border-border hover:border-foreground",
+                          )}
+                        >
+                          <span className="block text-base font-semibold text-foreground">
+                            {option.label}
+                          </span>
+                          <span className="mt-1 block text-sm text-muted-foreground">
+                            {option.description}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </Section>
+
+              <Section
+                title="Preview your call"
+                description="Hear the message and see a sample challenge before you schedule."
+              >
+                <ConfirmCallPreviewPanel
+                  loading={confirmPreviewLoading}
+                  disabled={!selectedVoiceId}
+                  payload={confirmPreview}
+                  challengeEnabled={challengeEnabled}
+                  onPreview={() => void playConfirmPreview()}
+                />
+              </Section>
+
               <p className="text-sm text-muted-foreground">
-                Press 1 when you answer to confirm you&apos;re awake.
+                {challengeEnabled
+                  ? "Solve the challenge to confirm you are awake, or press 9 to snooze during the challenge."
+                  : "Press 1 when you answer to confirm you are awake, or 9 to snooze."}
               </p>
             </div>
           ) : null}

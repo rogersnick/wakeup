@@ -8,6 +8,10 @@ import {
   type WakeupScriptMode,
   type WakeupScriptModeInput,
 } from "@/lib/wakeup/modes";
+import {
+  normalizeChallengeType,
+  type ChallengeType,
+} from "@/lib/wakeup/challenge";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -66,7 +70,58 @@ export type WakeupDisplay = {
   attemptCount: number;
   maxAttempts: number;
   snoozeCount: number;
+  challengeEnabled?: boolean;
+  challengeType?: string | null;
 };
+
+export type WakeupCallControl = {
+  id: string;
+  digit: string | null;
+  label: string;
+  primary?: boolean;
+};
+
+const CHALLENGE_CONFIRM_LABELS: Record<ChallengeType, string> = {
+  quick_math: "Answer math",
+  pattern_continue: "Complete pattern",
+  memory_echo: "Middle digit",
+};
+
+export function getWakeupCallControls(wakeup: {
+  challengeEnabled?: boolean;
+  challengeType?: string | null;
+}): WakeupCallControl[] {
+  if (wakeup.challengeEnabled) {
+    const challengeType = normalizeChallengeType(wakeup.challengeType);
+    return [
+      {
+        id: "challenge",
+        digit: null,
+        label: CHALLENGE_CONFIRM_LABELS[challengeType],
+        primary: true,
+      },
+      {
+        id: "snooze",
+        digit: "9",
+        label: "Snooze",
+      },
+    ];
+  }
+
+  return [
+    {
+      id: "confirm",
+      digit: "1",
+      label: "I'm awake",
+      primary: true,
+    },
+    {
+      id: "snooze",
+      digit: "9",
+      label: "Snooze",
+    },
+  ];
+}
 
 export function isActiveWakeup(wakeup: WakeupDisplay) {
   return wakeup.status === "scheduled" || wakeup.status === "calling";

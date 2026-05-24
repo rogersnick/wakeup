@@ -1,6 +1,7 @@
 import { Show, SignInButton } from "@clerk/nextjs";
 import { ArrowRight, CalendarClock } from "lucide-react";
 import Link from "next/link";
+import { LandingMessageRotator } from "@/components/landing-message-rotator";
 import { Button } from "@/components/ui/button";
 
 function AuthCta({ signedOutLabel, signedInLabel }: {
@@ -36,11 +37,11 @@ function AuthCta({ signedOutLabel, signedInLabel }: {
 }
 
 const taglines = [
-  {a: "Alarm", b: "Call" }
+  {a: "Alarm", b: "Calls" }
 ];
 
 export default function Home() {
-  const tagline = taglines[Math.floor(Math.random() * taglines.length)];
+  const tagline = taglines[0]!;
   return (
     <main id="main-content" className="texture-paper bg-background text-foreground">
       <a
@@ -82,17 +83,8 @@ export default function Home() {
             <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Tomorrow
             </p>
-            <p className="mt-6 font-serif text-6xl leading-none tracking-tight">
-              06:30
-            </p>
-            <div className="my-8 h-1 bg-foreground" aria-hidden />
-            <p className="text-lg italic leading-relaxed">
-              &ldquo;Good morning. Stand up, press 1, and start before the day
-              starts negotiating.&rdquo;
-            </p>
-            <div className="mt-8 grid grid-cols-2 border border-foreground font-mono text-xs uppercase tracking-widest">
-              <span className="border-r border-foreground p-3">Press 1</span>
-              <span className="p-3">Awake</span>
+            <div className="mt-6">
+              <LandingMessageRotator />
             </div>
           </aside>
         </div>
