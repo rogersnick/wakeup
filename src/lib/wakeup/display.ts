@@ -1,5 +1,13 @@
 import { format, parseISO } from "date-fns";
 import { formatTimeLabel } from "@/components/ui/time-picker";
+import {
+  formatModeSummary,
+  normalizeScriptMode,
+  type UserProfileContext,
+  type WakeupContentConfig,
+  type WakeupScriptMode,
+  type WakeupScriptModeInput,
+} from "@/lib/wakeup/modes";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -50,7 +58,8 @@ export type WakeupDisplay = {
   scheduledDate: string | null;
   recurrence: { days: number[] } | null;
   scriptText: string;
-  scriptMode: "static" | "dynamic";
+  scriptMode: WakeupScriptModeInput;
+  contentConfig?: WakeupContentConfig | null;
   resolvedScriptText: string | null;
   status: string;
   nextAttemptAt: string;
@@ -75,17 +84,27 @@ export function getNextActiveWakeup(wakeups: WakeupDisplay[]) {
 
 export function formatWakeupMessage(
   wakeup: WakeupDisplay,
-  userCity?: string | null,
+  profile: UserProfileContext = {},
 ) {
-  if (wakeup.scriptMode === "dynamic") {
+  const mode = normalizeScriptMode(wakeup.scriptMode);
+
+  if (mode !== "static") {
     if (wakeup.resolvedScriptText) {
       return wakeup.resolvedScriptText;
     }
-    const city = userCity?.trim();
-    return city
-      ? `Real-time Weather report for ${city}.`
-      : "Weather report — set your city to include local conditions.";
+
+    return formatModeSummary(mode, profile, wakeup.contentConfig);
   }
 
   return wakeup.scriptText;
 }
+
+export function getWakeupModeLabel(wakeup: WakeupDisplay): string {
+  return formatModeSummary(
+    normalizeScriptMode(wakeup.scriptMode),
+    {},
+    wakeup.contentConfig,
+  ).split(" — ")[0] ?? "Custom message";
+}
+
+export type { WakeupScriptMode };

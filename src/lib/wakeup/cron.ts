@@ -7,7 +7,8 @@ import {
   cleanupWakeUpAudio,
   maybeCleanupWakeUpAudio,
 } from "@/lib/wakeup/audio-cleanup";
-import { prepareDynamicWakeUpAudio } from "@/lib/wakeup/prepare-dynamic";
+import { prepareGeneratedWakeUpAudio } from "@/lib/wakeup/prepare-dynamic";
+import { isGeneratedMode, normalizeScriptMode } from "@/lib/wakeup/modes";
 import {
   computeNextOccurrence,
   computeRetryAttemptAt,
@@ -65,9 +66,9 @@ async function startWakeUpAttempt(wakeupId: string, now: Date) {
 
   let preparedWakeup = locked;
 
-  if (locked.scriptMode === "dynamic" && locked.attemptCount === 0) {
+  if (isGeneratedMode(normalizeScriptMode(locked.scriptMode)) && locked.attemptCount === 0) {
     try {
-      const prepared = await prepareDynamicWakeUpAudio(locked, user);
+      const prepared = await prepareGeneratedWakeUpAudio(locked, user);
       const [updated] = await db
         .update(wakeups)
         .set({
@@ -82,7 +83,7 @@ async function startWakeUpAttempt(wakeupId: string, now: Date) {
         preparedWakeup = updated;
       }
     } catch (error) {
-      console.error(`Failed to prepare dynamic wake-up ${wakeupId}`, error);
+      console.error(`Failed to prepare generated wake-up ${wakeupId}`, error);
       await markWakeUpAttemptFailed(wakeupId, "audio_prep_failed");
       return { wakeupId, started: false, reason: "audio_prep_failed" };
     }

@@ -40,5 +40,5 @@ export async function POST(request: Request) {
     await updateAttemptFromStatus({ wakeupId, callSid, callStatus });
   }
 
-  return new Response("", { status: 204 });
+  return new Response(null, { status: 200 });
 }

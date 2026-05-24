@@ -20,6 +20,15 @@ export const wakeupStatusEnum = pgEnum("wakeup_status", [
 export const wakeupScriptModeEnum = pgEnum("wakeup_script_mode", [
   "static",
   "dynamic",
+  "weather_report",
+  "local_news",
+  "sports_scores",
+  "market_brief",
+  "horoscope",
+  "daily_motivation",
+  "history_today",
+  "word_of_day",
+  "fun_fact",
 ]);
 
 export const users = pgTable("users", {
@@ -29,6 +38,9 @@ export const users = pgTable("users", {
   phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
   timezone: text("timezone").notNull().default("America/Toronto"),
   city: text("city"),
+  favoriteTeam: text("favorite_team"),
+  marketSymbols: text("market_symbols"),
+  zodiacSign: text("zodiac_sign"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -68,6 +80,11 @@ export const wakeups = pgTable(
     recurrence: jsonb("recurrence").$type<{ days: number[] } | null>(),
     scriptText: text("script_text").notNull(),
     scriptMode: wakeupScriptModeEnum("script_mode").notNull().default("static"),
+    contentConfig: jsonb("content_config").$type<{
+      marketSymbols?: string[];
+      favoriteTeam?: string;
+      zodiacSign?: string;
+    } | null>(),
     resolvedScriptText: text("resolved_script_text"),
     voiceId: text("voice_id").notNull(),
     audioBlobUrl: text("audio_blob_url"),

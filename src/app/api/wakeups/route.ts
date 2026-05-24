@@ -3,6 +3,8 @@ import { jsonError, requireUserId } from "@/lib/api";
 import { getDb } from "@/lib/db";
 import { wakeups } from "@/lib/db/schema";
 import { getOrCreateUser, scheduleWakeup } from "@/lib/wakeup/schedule";
+import { parseContentConfigFromBody } from "@/lib/wakeup/validate-message";
+import type { WakeupScriptModeInput } from "@/lib/wakeup/modes";
 
 export async function GET() {
   const authResult = await requireUserId();
@@ -32,7 +34,8 @@ export async function POST(request: Request) {
       scheduledDate?: string | null;
       recurrence?: { days: number[] } | null;
       scriptText?: string;
-      scriptMode?: "static" | "dynamic";
+      scriptMode?: WakeupScriptModeInput;
+      contentConfig?: Record<string, unknown> | null;
       voiceId?: string;
       timezone?: string;
     };
@@ -56,6 +59,7 @@ export async function POST(request: Request) {
       recurrence: body.recurrence,
       scriptText: body.scriptText?.trim() ?? "",
       scriptMode,
+      contentConfig: parseContentConfigFromBody(body.contentConfig ?? undefined),
       voiceId: body.voiceId,
       timezone: body.timezone,
     });

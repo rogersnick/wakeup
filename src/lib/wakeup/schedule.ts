@@ -4,13 +4,17 @@ import { users, wakeups } from "@/lib/db/schema";
 import { generateWakeUpAudio } from "@/lib/elevenlabs";
 import { storeWakeUpAudio } from "@/lib/blob";
 import {
-  CITY_WEATHER_NOT_FOUND_ERROR,
-  resolveCityForWeather,
-} from "@/lib/weather";
-import {
   computeFirstAttemptAt,
   type RecurrenceRule,
 } from "@/lib/wakeup/recurrence";
+import type { WakeupScriptMode, WakeupScriptModeInput } from "@/lib/wakeup/modes";
+import { isGeneratedMode } from "@/lib/wakeup/modes";
+import {
+  sanitizeContentConfig,
+  userToProfileContext,
+  validateScheduleMessage,
+} from "@/lib/wakeup/validate-message";
+import type { WakeupContentConfig } from "@/lib/wakeup/modes";
 
 const MAX_SCRIPT_LENGTH = 500;
 
@@ -21,7 +25,8 @@ export type ScheduleWakeupInput = {
   scheduledDate?: string | null;
   recurrence?: RecurrenceRule | null;
   scriptText: string;
-  scriptMode?: "static" | "dynamic";
+  scriptMode?: WakeupScriptModeInput;
+  contentConfig?: WakeupContentConfig | null;
   voiceId?: string;
   timezone?: string;
   maxAttempts?: number;
@@ -63,10 +68,21 @@ export async function assertPhoneVerified(userId: string) {
 }
 
 export async function scheduleWakeup(input: ScheduleWakeupInput) {
-  const scriptMode = input.scriptMode ?? "static";
+  const user = await assertPhoneVerified(input.userId);
+  const profile = userToProfileContext(user);
+  const scriptMode = await validateScheduleMessage(
+    input.scriptMode,
+    profile,
+    input.contentConfig,
+  );
   const scriptText = input.scriptText.trim();
+  const contentConfig = sanitizeContentConfig(
+    scriptMode,
+    profile,
+    input.contentConfig,
+  );
 
-  if (scriptMode === "static") {
+  if (!isGeneratedMode(scriptMode)) {
     if (scriptText.length === 0) {
       throw new Error("Wake-up message cannot be empty.");
     }
@@ -74,17 +90,6 @@ export async function scheduleWakeup(input: ScheduleWakeupInput) {
       throw new Error(
         `Wake-up message must be ${MAX_SCRIPT_LENGTH} characters or fewer.`,
       );
-    }
-  }
-
-  const user = await assertPhoneVerified(input.userId);
-  if (scriptMode === "dynamic" && !user.city?.trim()) {
-    throw new Error("Set your city before scheduling a weather report wake-up.");
-  }
-  if (scriptMode === "dynamic") {
-    const resolved = await resolveCityForWeather(user.city!);
-    if (!resolved) {
-      throw new Error(CITY_WEATHER_NOT_FOUND_ERROR);
     }
   }
 
@@ -108,7 +113,7 @@ export async function scheduleWakeup(input: ScheduleWakeupInput) {
   const wakeupId = crypto.randomUUID();
 
   let audioBlobUrl: string | null = null;
-  if (scriptMode === "static") {
+  if (!isGeneratedMode(scriptMode)) {
     const audio = await generateWakeUpAudio(scriptText, voiceId);
     audioBlobUrl = await storeWakeUpAudio(wakeupId, audio);
   }
@@ -122,8 +127,9 @@ export async function scheduleWakeup(input: ScheduleWakeupInput) {
       scheduledTimeLocal: input.scheduledTimeLocal,
       scheduledDate: input.scheduledDate ?? null,
       recurrence: input.recurrence ?? null,
-      scriptText: scriptMode === "dynamic" ? "" : scriptText,
-      scriptMode,
+      scriptText: isGeneratedMode(scriptMode) ? "" : scriptText,
+      scriptMode: scriptMode as WakeupScriptMode,
+      contentConfig,
       resolvedScriptText: null,
       voiceId,
       audioBlobUrl,

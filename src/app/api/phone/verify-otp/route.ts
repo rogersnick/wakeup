@@ -3,6 +3,7 @@ import { jsonError, requireUserId } from "@/lib/api";
 import { getDb } from "@/lib/db";
 import { phoneOtps, users } from "@/lib/db/schema";
 import { hashOtpCode } from "@/lib/otp";
+import { normalizePhoneE164 } from "@/lib/phone";
 
 export async function POST(request: Request) {
   const authResult = await requireUserId();
@@ -11,10 +12,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as { code?: string };
+    const body = (await request.json()) as {
+      code?: string;
+      phoneE164?: string;
+    };
     if (!body.code) {
       return jsonError("Verification code is required.");
     }
+
+    const expectedPhoneE164 = body.phoneE164
+      ? normalizePhoneE164(body.phoneE164)
+      : null;
 
     const db = getDb();
     const otp = await db.query.phoneOtps.findFirst({
@@ -24,6 +32,10 @@ export async function POST(request: Request) {
 
     if (!otp) {
       return jsonError("No verification code found. Request a new one.");
+    }
+
+    if (expectedPhoneE164 && otp.phoneE164 !== expectedPhoneE164) {
+      return jsonError("Phone number does not match the verification request.");
     }
 
     if (otp.expiresAt < new Date()) {

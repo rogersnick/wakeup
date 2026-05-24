@@ -1,12 +1,13 @@
 "use client";
 
-import { AlarmClock } from "lucide-react";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { CityInput } from "@/components/city-input";
+import { ConfirmCancelWakeupModal } from "@/components/confirm-cancel-wakeup-modal";
+import { ProfilePreferencesInput } from "@/components/profile-preferences-input";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardEyebrow, CardPanel } from "@/components/ui/card";
+import { Card, CardEyebrow } from "@/components/ui/card";
 import { formatTimeLabel } from "@/components/ui/time-picker";
 import { REQUEST_CITY_CHANGE_EVENT } from "@/lib/profile-events";
 import {
@@ -14,13 +15,24 @@ import {
   formatWakeupMessage,
   type WakeupDisplay,
 } from "@/lib/wakeup/display";
+import {
+  getMissingPrerequisites,
+  getModePrerequisites,
+  isGeneratedMode,
+  normalizeScriptMode,
+  type UserProfileContext,
+} from "@/lib/wakeup/modes";
 
 type Props = {
   wakeup: WakeupDisplay;
   userCity?: string | null;
   city?: string | null;
   cityResolvedLabel?: string | null;
+  favoriteTeam?: string | null;
+  marketSymbols?: string | null;
+  zodiacSign?: string | null;
   onCitySaved?: () => void;
+  onCancelled?: () => void;
   timezone?: string | null;
 };
 
@@ -29,12 +41,34 @@ export function NextWakeupPreview({
   userCity,
   city,
   cityResolvedLabel,
+  favoriteTeam,
+  marketSymbols,
+  zodiacSign,
   onCitySaved,
+  onCancelled,
   timezone,
 }: Props) {
   const [showCityEditor, setShowCityEditor] = useState(false);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const mode = normalizeScriptMode(wakeup.scriptMode);
+  const isGenerated = isGeneratedMode(mode);
+  const profileContext: UserProfileContext = {
+    city,
+    cityResolvedLabel,
+    favoriteTeam,
+    marketSymbols,
+    zodiacSign: zodiacSign as UserProfileContext["zodiacSign"],
+  };
+  const missingPrerequisites = getMissingPrerequisites(
+    mode,
+    profileContext,
+    wakeup.contentConfig,
+  );
+  const needsCity = getModePrerequisites(mode).includes("city");
   const hasValidWeatherCity = Boolean(cityResolvedLabel);
-  const isWeatherReport = wakeup.scriptMode === "dynamic";
 
   useEffect(() => {
     function openCityEditor() {
@@ -56,8 +90,44 @@ export function NextWakeupPreview({
     onCitySaved?.();
   }
 
+  function handleProfileSaved() {
+    setShowProfileEditor(false);
+    onCitySaved?.();
+  }
+
+  async function cancelWakeUp() {
+    if (cancelling) {
+      return;
+    }
+
+    setShowCancelConfirm(false);
+    setCancelling(true);
+    setCancelError(null);
+
+    try {
+      const response = await fetch(`/api/wakeups/${wakeup.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error ?? "Failed to cancel wake-up");
+      }
+
+      onCancelled?.();
+    } catch (error) {
+      setCancelError(
+        error instanceof Error ? error.message : "Failed to cancel wake-up",
+      );
+    } finally {
+      setCancelling(false);
+    }
+  }
+
+  const canCancel =
+    wakeup.status !== "cancelled" && wakeup.status !== "confirmed";
+
   const nextAttempt = new Date(wakeup.nextAttemptAt);
-  const message = formatWakeupMessage(wakeup, userCity);
+  const message = formatWakeupMessage(wakeup, profileContext);
   const scheduleSummary = formatScheduleSummary(
     wakeup.type,
     wakeup.scheduledDate,
@@ -80,29 +150,24 @@ export function NextWakeupPreview({
 
       <div className="grid gap-6 p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center border-2 border-foreground bg-accent/20">
-              <AlarmClock className="h-8 w-8 text-accent" strokeWidth={2.25} />
-            </div>
-            <div>
-              <p className="text-4xl font-extrabold tracking-tight">
-                {formatTimeLabel(wakeup.scheduledTimeLocal)}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {nextAttempt.toLocaleString(undefined, {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
+          <div>
+            <p className="text-4xl font-extrabold tracking-tight">
+              {formatTimeLabel(wakeup.scheduledTimeLocal)}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {nextAttempt.toLocaleString(undefined, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <Badge variant={wakeup.status === "calling" ? "accent" : "primary"}>
-              {wakeup.status}
-            </Badge>
+            {wakeup.status === "calling" ? (
+              <Badge variant="accent">Calling now</Badge>
+            ) : null}
             <div className="flex gap-2">
               <div className="flex items-center gap-2 border-2 border-foreground bg-foreground px-3 py-1.5 text-background">
                 <span className="font-mono text-base font-extrabold leading-none">1</span>
@@ -110,7 +175,7 @@ export function NextWakeupPreview({
               </div>
               <div className="flex items-center gap-2 border-2 border-foreground px-3 py-1.5">
                 <span className="font-mono text-base font-extrabold leading-none">2</span>
-                <span className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">+5 min</span>
+                <span className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">SNOOZE</span>
               </div>
             </div>
             {wakeup.snoozeCount > 0 ? (
@@ -121,14 +186,14 @@ export function NextWakeupPreview({
           </div>
         </div>
 
-        <CardPanel variant="primary">
+        <div>
           <CardEyebrow className="text-primary">What you&apos;ll hear</CardEyebrow>
-          {isWeatherReport && (!hasValidWeatherCity || showCityEditor) ? (
-            <div className="mt-4">
+          {isGenerated && missingPrerequisites.length > 0 ? (
+            <div className="mt-4 grid gap-4">
               <p className="text-sm text-muted-foreground">
-                Add your city to include local weather in this wake-up.
+                Complete your profile to enable this wake-up.
               </p>
-              <div className="mt-4">
+              {needsCity && (!hasValidWeatherCity || showCityEditor) ? (
                 <CityInput
                   key={city ?? "unset"}
                   variant="inline"
@@ -139,38 +204,69 @@ export function NextWakeupPreview({
                     hasValidWeatherCity ? handleCityCancel : undefined
                   }
                 />
-              </div>
+              ) : null}
+              {missingPrerequisites.some((item) => item !== "city") ||
+              showProfileEditor ? (
+                <ProfilePreferencesInput
+                  profile={profileContext}
+                  required={getModePrerequisites(mode).filter(
+                    (item) => item !== "city",
+                  )}
+                  onSaved={handleProfileSaved}
+                  onCancel={
+                    missingPrerequisites.length === 0
+                      ? () => setShowProfileEditor(false)
+                      : undefined
+                  }
+                />
+              ) : null}
             </div>
-          ) : isWeatherReport && !wakeup.resolvedScriptText ? (
+          ) : isGenerated && !wakeup.resolvedScriptText ? (
             <>
               <p className="mt-3 text-lg leading-8 text-foreground">{message}</p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="mt-3 border-foreground bg-foreground text-background hover:bg-foreground hover:text-orange-500"
-                onClick={() => setShowCityEditor(true)}
-              >
-                Change city
-              </Button>
+              {needsCity ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-3 w-fit border-foreground bg-foreground text-background hover:bg-foreground hover:text-orange-500"
+                  onClick={() => setShowCityEditor(true)}
+                >
+                  Change city
+                </Button>
+              ) : null}
             </>
           ) : (
             <p className="text-lg leading-8 text-foreground">
               &ldquo;{message}&rdquo;
             </p>
           )}
-        </CardPanel>
+        </div>
 
-        <p className="text-xs text-muted-foreground">
-          Need to cancel?{" "}
-          <Link
-            href="/dashboard/wakeups"
-            className="font-semibold text-foreground underline-offset-4 hover:underline hover:text-red-500"
-          >
-            Manage in Wake-ups →
-          </Link>
-        </p>
+        {cancelError ? <Alert variant="error">{cancelError}</Alert> : null}
+
+        {canCancel ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={cancelling}
+              className="hover:bg-foreground hover:text-red-500"
+              onClick={() => setShowCancelConfirm(true)}
+            >
+              {cancelling ? "Cancelling..." : "Cancel wake-up"}
+            </Button>
+          </div>
+        ) : null}
       </div>
+
+      {showCancelConfirm ? (
+        <ConfirmCancelWakeupModal
+          onConfirm={() => void cancelWakeUp()}
+          onDismiss={() => setShowCancelConfirm(false)}
+        />
+      ) : null}
     </Card>
   );
 }
