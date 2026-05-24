@@ -2,7 +2,7 @@
 
 **A personal wake-up call at the exact minute you choose.**
 
-FirstCall schedules AI-voiced phone calls to your verified number. Pick a custom script or get a weather-aware morning brief, choose an ElevenLabs voice, and Twilio dials you at the exact time you chose. Press **1** to confirm you're awake, or **9** to snooze. Optionally enable a **wake-up challenge** — solve it and you're confirmed automatically.
+AlarmCall schedules AI-voiced phone calls to your verified number. Pick a custom script or get a weather-aware morning brief, choose an ElevenLabs voice, and Twilio dials you at the exact time you chose. Press **1** to confirm you're awake, or **9** to snooze. Optionally enable a **wake-up challenge** — solve it and you're confirmed automatically.
 
 ## Personal Pain Point
 
