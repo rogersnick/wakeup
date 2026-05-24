@@ -13,12 +13,12 @@ type CardProps = HTMLAttributes<HTMLElement> & {
  * fast color transitions. Variants use tinted borders instead of sticker shadows.
  */
 const variantClasses: Record<CardVariant, string> = {
-  default: "bg-background text-foreground border-2 border-border",
-  muted: "bg-muted text-foreground border-2 border-border",
-  primary: "bg-background text-foreground border-2 border-primary",
-  secondary: "bg-background text-foreground border-2 border-secondary",
-  accent: "bg-background text-foreground border-2 border-accent",
-  success: "bg-background text-foreground border-2 border-quaternary",
+  default: "bg-background text-foreground border border-border-light",
+  muted: "bg-muted text-foreground border border-border-light",
+  primary: "bg-background text-foreground border-2 border-border",
+  secondary: "bg-background text-foreground border border-border-light",
+  accent: "bg-background text-foreground border border-border-light",
+  success: "bg-background text-foreground border border-border-light",
 };
 
 export function Card({
@@ -61,7 +61,7 @@ export function CardDescription({
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn("mt-1 text-sm leading-6 text-muted-foreground", className)}
+      className={cn("mt-1 text-base leading-7 text-muted-foreground", className)}
       {...props}
     />
   );
@@ -80,7 +80,7 @@ export function CardPanel({
   return (
     <div
       className={cn(
-        "grid gap-4 border-2 p-5 transition-colors duration-100",
+        "grid gap-4 border p-5 transition-colors duration-100",
         variantClasses[variant],
         className,
       )}
@@ -102,9 +102,9 @@ export function SelectableCard({
   return (
     <div
       className={cn(
-        "grid gap-4 border-2 p-5 transition-colors duration-100",
+        "grid gap-4 border p-5 transition-colors duration-100",
         selected
-          ? "border-foreground bg-foreground text-background"
+          ? "border-brand bg-brand/12 text-foreground"
           : "border-border bg-background text-foreground hover:border-foreground",
         className,
       )}

@@ -101,7 +101,7 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
       <CardEyebrow>Step 1</CardEyebrow>
       <CardTitle className="mt-2 text-2xl">Verify your phone</CardTitle>
       <CardDescription>
-        Enter your mobile number and we'll text you a code.
+        Enter your mobile number and we&apos;ll text you a code.
       </CardDescription>
 
       <div className="mt-6 grid gap-4">
@@ -117,7 +117,7 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
             type="button"
             disabled={loading || phone.replace(/\D/g, "").length < 10}
             onClick={sendCode}
-            className="hover:border-white hover:bg-white hover:text-[#ff6a00]"
+            className="hover:border-white hover:bg-white hover:text-brand"
           >
             Send code
           </Button>

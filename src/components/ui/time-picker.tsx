@@ -63,10 +63,10 @@ function ColumnButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex h-11 min-w-[3.25rem] items-center justify-center rounded-md px-2 text-sm font-bold transition-colors",
+        "flex h-11 min-w-13 items-center justify-center rounded-md px-2 text-sm font-bold transition-colors",
         selected
-          ? "bg-primary text-primary-foreground"
-          : "bg-background text-foreground hover:bg-border hover:text-[#ff6a00]",
+          ? "bg-brand/20 text-brand"
+          : "bg-background text-foreground hover:bg-border hover:text-brand",
       )}
     >
       {children}
@@ -159,7 +159,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
             </div>
           </div>
 
-          <div className="sm:min-w-[4.5rem]">
+          <div className="sm:min-w-18">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Period
             </p>
@@ -170,10 +170,10 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
                   type="button"
                   onClick={() => update({ period: option })}
                   className={cn(
-                    "flex h-11 w-full min-w-[3.25rem] items-center justify-center rounded-md text-sm font-bold transition-colors sm:h-14 sm:w-16 sm:text-base",
+                    "flex h-11 w-full min-w-13 items-center justify-center rounded-md text-sm font-bold transition-colors sm:h-14 sm:w-16 sm:text-base",
                     period === option
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-background text-foreground hover:bg-border hover:text-[#ff6a00]",
+                      ? "bg-brand/20 text-brand"
+                      : "bg-background text-foreground hover:bg-border hover:text-brand",
                   )}
                 >
                   {option}
@@ -183,7 +183,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           </div>
         </div>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
+        <p className="mt-4 text-center text-base text-muted-foreground">
           Tap hour, minute, and AM/PM to set your wake-up time.
         </p>
       </div>

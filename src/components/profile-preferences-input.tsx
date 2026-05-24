@@ -60,7 +60,7 @@ export function ProfilePreferencesInput({
     <div className="grid gap-4">
       {required.includes("favoriteTeam") ? (
         <label className="grid gap-2">
-          <span className="text-sm text-muted-foreground">Favorite team</span>
+          <span className="text-base text-muted-foreground">Favorite team</span>
           <div className="flex flex-wrap gap-3">
             <Input
               value={favoriteTeam}
@@ -68,7 +68,7 @@ export function ProfilePreferencesInput({
               placeholder="e.g. Toronto Raptors, Calgary Flames, Arsenal"
               className="min-w-48 flex-1"
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Use the full team name when you can. Nicknames like Raptors usually work too.
             </p>
             <Button
@@ -84,7 +84,7 @@ export function ProfilePreferencesInput({
 
       {required.includes("marketSymbols") ? (
         <label className="grid gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-base text-muted-foreground">
             Stock symbols (comma-separated)
           </span>
           <div className="flex flex-wrap gap-3">
@@ -107,7 +107,7 @@ export function ProfilePreferencesInput({
 
       {required.includes("zodiacSign") ? (
         <div className="grid gap-2">
-          <span className="text-sm text-muted-foreground">Zodiac sign</span>
+          <span className="text-base text-muted-foreground">Zodiac sign</span>
           <div className="flex flex-wrap gap-2">
             {ZODIAC_SIGNS.map((sign) => (
               <button
@@ -121,8 +121,8 @@ export function ProfilePreferencesInput({
                 className={[
                   "rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors",
                   zodiacSign === sign
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-border hover:text-[#ff6a00]",
+                    ? "bg-brand/20 text-brand"
+                    : "bg-muted text-muted-foreground hover:bg-border hover:text-brand",
                 ].join(" ")}
               >
                 {sign}

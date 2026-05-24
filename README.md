@@ -4,6 +4,15 @@
 
 FirstCall schedules AI-voiced phone calls to your verified number. Pick a custom script or get a weather-aware morning brief, choose an ElevenLabs voice, and Twilio dials you at the exact time you chose. Press **1** to confirm you're awake, or **9** to snooze. Optionally enable a **wake-up challenge** — solve it and you're confirmed automatically.
 
+## Personal Pain Point
+
+This project is built for the prompt **"solve a personal pain point."**
+
+- **Pain point:** Standard alarms are easy to ignore, especially on high-stakes mornings (flights, interviews, exams).
+- **Solution:** A real phone call that requires action (confirm, snooze, or challenge completion), making wake-ups harder to miss.
+- **AI role:** OpenAI generates personalized wake-up content, and ElevenLabs turns it into natural-sounding call audio.
+- **Outcome:** A practical, daily-use tool that directly addresses oversleep risk with measurable behavior (confirmations, snoozes, retries).
+
 ## How it works
 
 ```mermaid
@@ -48,7 +57,7 @@ flowchart LR
 ## Tech stack
 
 | Layer | Technology |
-|-------|------------|
+| ----- | ---------- |
 | App | Next.js 16, React 19, Tailwind CSS v4 |
 | Auth | Clerk |
 | Database | Neon Postgres + Drizzle ORM |
@@ -56,8 +65,13 @@ flowchart LR
 | TTS | ElevenLabs |
 | AI scripts | OpenAI GPT-4o-mini |
 | Weather | Open-Meteo (no API key) |
+| Storage | Vercel Blob |
+| Scheduling | Vercel Cron |
+
+### AI mode requirements
+
 | Mode | API key needed |
-|------|----------------|
+| ---- | -------------- |
 | Write my own | None |
 | Weather report | `OPENAI_API_KEY` (script polish) + Open-Meteo (free) |
 | Daily motivation, Horoscope, Word of the day, Fun fact | `OPENAI_API_KEY` only |
@@ -66,9 +80,7 @@ flowchart LR
 | Sports scores | `OPENAI_API_KEY` + ESPN (free, no key) with TheSportsDB fallback |
 | Market brief | `OPENAI_API_KEY` + Yahoo Finance (free; optional `FINNHUB_API_KEY`) |
 
-If an optional key is missing, those modes still work using built-in fallback scripts instead of live data.
-| Storage | Vercel Blob |
-| Scheduling | Vercel Cron |
+If an optional key is missing, those modes still work with built-in fallback scripts instead of live data.
 
 ## Local development
 
@@ -85,21 +97,21 @@ If an optional key is missing, those modes still work using built-in fallback sc
 npm install
 ```
 
-2. Copy environment variables:
+1. Copy environment variables:
 
 ```bash
 cp .env.example .env.local
 ```
 
-3. Fill in `.env.local` (see table below).
+1. Fill in `.env.local` (see table below).
 
-4. Push the database schema:
+1. Push the database schema:
 
 ```bash
 npm run db:push
 ```
 
-5. Start the dev server:
+1. Start the dev server:
 
 ```bash
 npm run dev
@@ -130,7 +142,7 @@ npm run db:push       # push schema directly (dev)
 ## Environment variables
 
 | Variable | Required | Description |
-|----------|----------|-------------|
+| -------- | -------- | ----------- |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key |
 | `CLERK_SECRET_KEY` | Yes | Clerk secret key |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Yes | `/sign-in` |
@@ -160,7 +172,7 @@ npm run db:push       # push schema directly (dev)
 
 ## Project structure
 
-```
+```text
 src/
 ├── app/
 │   ├── api/           # REST + Twilio webhook routes

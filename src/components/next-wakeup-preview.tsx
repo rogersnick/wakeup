@@ -39,7 +39,6 @@ type Props = {
 
 export function NextWakeupPreview({
   wakeup,
-  userCity,
   city,
   cityResolvedLabel,
   favoriteTeam,
@@ -50,7 +49,6 @@ export function NextWakeupPreview({
   timezone,
 }: Props) {
   const [showCityEditor, setShowCityEditor] = useState(false);
-  const [showProfileEditor, setShowProfileEditor] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -92,7 +90,6 @@ export function NextWakeupPreview({
   }
 
   function handleProfileSaved() {
-    setShowProfileEditor(false);
     onCitySaved?.();
   }
 
@@ -156,7 +153,7 @@ export function NextWakeupPreview({
             <p className="text-4xl font-extrabold tracking-tight">
               {formatTimeLabel(wakeup.scheduledTimeLocal)}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-base text-muted-foreground">
               {nextAttempt.toLocaleString(undefined, {
                 weekday: "long",
                 month: "long",
@@ -176,8 +173,8 @@ export function NextWakeupPreview({
                   key={control.id}
                   className={
                     control.primary
-                      ? "flex items-center gap-2 border-2 border-foreground bg-foreground px-3 py-1.5 text-background"
-                      : "flex items-center gap-2 border-2 border-foreground px-3 py-1.5"
+                      ? "flex items-center gap-2 border border-brand/50 bg-brand/12 px-3 py-1.5 text-foreground"
+                      : "flex items-center gap-2 border border-border-light px-3 py-1.5"
                   }
                 >
                   {control.digit ? (
@@ -213,10 +210,10 @@ export function NextWakeupPreview({
         </div>
 
         <div>
-          <CardEyebrow className="text-primary">What you&apos;ll hear</CardEyebrow>
+          <CardEyebrow className="text-brand">What you&apos;ll hear</CardEyebrow>
           {isGenerated && missingPrerequisites.length > 0 ? (
             <div className="mt-4 grid gap-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 Complete your profile to enable this wake-up.
               </p>
               {needsCity && (!hasValidWeatherCity || showCityEditor) ? (
@@ -231,19 +228,13 @@ export function NextWakeupPreview({
                   }
                 />
               ) : null}
-              {missingPrerequisites.some((item) => item !== "city") ||
-              showProfileEditor ? (
+              {missingPrerequisites.some((item) => item !== "city") ? (
                 <ProfilePreferencesInput
                   profile={profileContext}
                   required={getModePrerequisites(mode).filter(
                     (item) => item !== "city",
                   )}
                   onSaved={handleProfileSaved}
-                  onCancel={
-                    missingPrerequisites.length === 0
-                      ? () => setShowProfileEditor(false)
-                      : undefined
-                  }
                 />
               ) : null}
             </div>
@@ -255,7 +246,7 @@ export function NextWakeupPreview({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="mt-3 w-fit border-foreground bg-foreground text-background hover:bg-foreground hover:text-orange-500"
+                  className="mt-3 w-fit border-foreground bg-foreground text-background hover:bg-foreground hover:text-brand"
                   onClick={() => setShowCityEditor(true)}
                 >
                   Change city
