@@ -51,6 +51,7 @@ export function buildFallbackScript(input: GenerateScriptInput): string {
     ? `Good morning, ${input.firstName.trim()}!`
     : "Good morning!";
   const cityLabel = input.cityLabel ?? input.profile.city?.trim();
+  const resolved = resolveContentConfig(input.profile, input.contentConfig);
 
   switch (mode) {
     case "weather_report":
@@ -67,7 +68,9 @@ export function buildFallbackScript(input: GenerateScriptInput): string {
     case "sports_scores":
       return `${greeting} Here's what's next on your team's schedule. Time to get up and start your day.`;
     case "market_brief":
-      return `${greeting} Here's your market brief. Time to get up and start your day.`;
+      return resolved.marketSymbols?.length
+        ? `${greeting} Market data is delayed right now for ${resolved.marketSymbols.join(", ")}. Check your watchlist after you get up and start your day.`
+        : `${greeting} Here's your market brief. Time to get up and start your day.`;
     case "horoscope":
       return `${greeting} Here's your horoscope for today. Time to get up and make it a great day.`;
     case "daily_motivation":
