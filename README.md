@@ -158,41 +158,6 @@ npm run db:push       # push schema directly (dev)
 4. Vercel Cron is configured in `vercel.json` to hit `/api/cron/wakeups` every minute.
 5. Run `npm run db:migrate` against your production database (or use `db:push` for initial setup).
 
-## 2-minute judge demo path
-
-Use this flow to show the full product loop quickly:
-
-1. **Sign in** at `/dashboard` and verify your phone with SMS OTP.
-2. **Schedule a one-shot wake-up** for **In 5 min** with any message mode.
-3. Enable **Wake-up challenge** on the confirm step (try **Quick math** or **Audio check**).
-4. Wait for the outbound call, listen to the message, pass the challenge, then press **1**.
-5. Confirm the dashboard shows updated **wake-up consistency** stats and you receive an **SMS recap**.
-
-### Expected behavior during demo
-
-| Step | What judges should see |
-|------|------------------------|
-| Schedule | Wake-up saved with `status=scheduled` |
-| Cron fire | `/api/cron/wakeups` picks up due wake-up within 1 minute |
-| Call | Twilio dials verified number and plays generated audio |
-| Challenge | Optional keypad prompt after message (math/pattern/audio) |
-| Confirm | Press **1** marks attempt confirmed and updates streak stats |
-| Recap | SMS with wake-up script text arrives after confirmation |
-
-### Manual cron trigger (optional)
-
-If you need to force processing outside Vercel Cron:
-
-```bash
-curl -X POST "http://localhost:3000/api/cron/wakeups" \
-  -H "Authorization: Bearer $CRON_SECRET"
-```
-
-### Reliability notes
-
-- Stale `calling` wake-ups older than 10 minutes are automatically recovered on the next cron tick.
-- Failed Twilio call initiation rolls the wake-up back into retry scheduling instead of leaving it stuck.
-
 ## Project structure
 
 ```
