@@ -8,15 +8,18 @@ export type GenerateSurpriseScriptInput = {
   city: string;
   weather: WeatherSnapshot | null;
   timezone: string;
-  toneHint?: string | null;
+  firstName?: string | null;
 };
 
 export function buildFallbackScript(input: GenerateSurpriseScriptInput): string {
   const cityLabel = input.weather?.cityLabel ?? input.city;
+  const greeting = input.firstName?.trim()
+    ? `Good morning, ${input.firstName.trim()}!`
+    : "Good morning!";
   if (input.weather) {
-    return `Good morning! It's ${input.weather.tempF} degrees and ${input.weather.description} in ${cityLabel}. Time to get up and start your day.`;
+    return `${greeting} It's ${input.weather.tempC} degrees and ${input.weather.description} in ${cityLabel}. Time to get up and start your day.`;
   }
-  return `Good morning from ${cityLabel}! Time to get up and start your day.`;
+  return `${greeting} Time to get up and start your day in ${cityLabel}.`;
 }
 
 function trimScript(text: string): string {
@@ -33,12 +36,12 @@ export async function generateSurpriseScript(
   try {
     const apiKey = requireEnv("OPENAI_API_KEY");
     const weatherLine = input.weather
-      ? `Current weather in ${input.weather.cityLabel}: ${input.weather.tempF}°F and ${input.weather.description}.`
+      ? `Current weather in ${input.weather.cityLabel}: ${input.weather.tempC}°C and ${input.weather.description}.`
       : `Location: ${input.city}. Weather is unavailable — do not invent specific weather details.`;
 
-    const toneLine = input.toneHint?.trim()
-      ? `Tone preference: ${input.toneHint.trim()}.`
-      : "Tone preference: warm and motivating.";
+    const nameLine = input.firstName?.trim()
+      ? `Address the user as ${input.firstName.trim()} at the start of the script.`
+      : "Do not invent a name for the user.";
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -69,7 +72,8 @@ export async function generateSurpriseScript(
             content: [
               `Write a wake-up call script for someone in timezone ${input.timezone}.`,
               weatherLine,
-              toneLine,
+              "Tone preference: warm and motivating.",
+              nameLine,
             ].join("\n"),
           },
         ],

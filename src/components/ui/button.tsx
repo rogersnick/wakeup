@@ -10,32 +10,34 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    "bg-primary text-white hover:bg-blue-600 hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-  secondary:
-    "bg-muted text-foreground hover:bg-gray-200 hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-  outline:
-    "border-4 border-primary bg-transparent text-primary hover:bg-primary hover:text-white hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-  ghost:
-    "bg-transparent text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-  destructive:
-    "bg-red-600 text-white hover:bg-red-700 hover:scale-105 focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2",
+  primary: "border-2 border-foreground bg-foreground text-background hover:bg-background hover:text-foreground",
+  secondary: "border-2 border-foreground bg-background text-foreground hover:bg-foreground hover:text-background",
+  outline: "border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background",
+  ghost: "border-2 border-transparent bg-transparent text-foreground underline-offset-4 hover:underline",
+  destructive: "border-2 border-foreground bg-background text-foreground hover:bg-foreground hover:text-background",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-10 px-4 text-sm",
-  default: "h-12 px-5 text-sm",
-  lg: "h-14 px-6 text-base",
+  sm: "min-h-11 px-4 text-xs",
+  default: "min-h-12 px-6 text-sm",
+  lg: "min-h-14 px-8 text-sm",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "primary", size = "default", type = "button", ...props }, ref) => {
+  (
+    { className, variant = "primary", size = "default", type = "button", ...props },
+    ref,
+  ) => {
     return (
       <button
         ref={ref}
         type={type}
         className={cn(
-          "inline-flex items-center justify-center rounded-md font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center",
+          "font-mono font-medium uppercase tracking-widest",
+          "transition-colors duration-100",
+          "disabled:pointer-events-none disabled:opacity-50",
+          "focus-visible:outline-3 focus-visible:outline-offset-3",
           variantClasses[variant],
           sizeClasses[size],
           className,

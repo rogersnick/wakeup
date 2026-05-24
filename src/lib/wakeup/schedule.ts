@@ -4,12 +4,15 @@ import { users, wakeups } from "@/lib/db/schema";
 import { generateWakeUpAudio } from "@/lib/elevenlabs";
 import { storeWakeUpAudio } from "@/lib/blob";
 import {
+  CITY_WEATHER_NOT_FOUND_ERROR,
+  resolveCityForWeather,
+} from "@/lib/weather";
+import {
   computeFirstAttemptAt,
   type RecurrenceRule,
 } from "@/lib/wakeup/recurrence";
 
 const MAX_SCRIPT_LENGTH = 500;
-const MAX_TONE_HINT_LENGTH = 100;
 
 export type ScheduleWakeupInput = {
   userId: string;
@@ -61,26 +64,28 @@ export async function assertPhoneVerified(userId: string) {
 
 export async function scheduleWakeup(input: ScheduleWakeupInput) {
   const scriptMode = input.scriptMode ?? "static";
-  const toneHint = input.scriptText.trim();
+  const scriptText = input.scriptText.trim();
 
   if (scriptMode === "static") {
-    if (toneHint.length === 0) {
+    if (scriptText.length === 0) {
       throw new Error("Wake-up message cannot be empty.");
     }
-    if (toneHint.length > MAX_SCRIPT_LENGTH) {
+    if (scriptText.length > MAX_SCRIPT_LENGTH) {
       throw new Error(
         `Wake-up message must be ${MAX_SCRIPT_LENGTH} characters or fewer.`,
       );
     }
-  } else if (toneHint.length > MAX_TONE_HINT_LENGTH) {
-    throw new Error(
-      `Tone hint must be ${MAX_TONE_HINT_LENGTH} characters or fewer.`,
-    );
   }
 
   const user = await assertPhoneVerified(input.userId);
   if (scriptMode === "dynamic" && !user.city?.trim()) {
-    throw new Error("Set your city on your profile before scheduling a surprise wake-up.");
+    throw new Error("Set your city before scheduling a weather report wake-up.");
+  }
+  if (scriptMode === "dynamic") {
+    const resolved = await resolveCityForWeather(user.city!);
+    if (!resolved) {
+      throw new Error(CITY_WEATHER_NOT_FOUND_ERROR);
+    }
   }
 
   const timezone = input.timezone ?? user.timezone;
@@ -104,7 +109,7 @@ export async function scheduleWakeup(input: ScheduleWakeupInput) {
 
   let audioBlobUrl: string | null = null;
   if (scriptMode === "static") {
-    const audio = await generateWakeUpAudio(toneHint, voiceId);
+    const audio = await generateWakeUpAudio(scriptText, voiceId);
     audioBlobUrl = await storeWakeUpAudio(wakeupId, audio);
   }
 
@@ -117,7 +122,7 @@ export async function scheduleWakeup(input: ScheduleWakeupInput) {
       scheduledTimeLocal: input.scheduledTimeLocal,
       scheduledDate: input.scheduledDate ?? null,
       recurrence: input.recurrence ?? null,
-      scriptText: toneHint,
+      scriptText: scriptMode === "dynamic" ? "" : scriptText,
       scriptMode,
       resolvedScriptText: null,
       voiceId,

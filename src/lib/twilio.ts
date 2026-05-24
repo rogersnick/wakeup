@@ -59,20 +59,26 @@ export async function initiateWakeUpCall(input: {
   return call.sid;
 }
 
-export function buildWakeUpTwiml(audioBlobUrl: string, wakeupId: string) {
+export function buildWakeUpTwiml(
+  audioBlobUrl: string,
+  wakeupId: string,
+) {
   const appUrl = getAppUrl().startsWith("http")
     ? getAppUrl()
     : `https://${getAppUrl()}`;
   const response = new twilio.twiml.VoiceResponse();
-  // Nest Play inside Gather so DTMF is listened for during audio (press 1 to interrupt).
+  // Nest Play inside Gather so DTMF is listened for while the wake-up audio loops.
   const gather = response.gather({
     numDigits: 1,
     action: `${appUrl}/api/twilio/voice/confirm?wakeupId=${wakeupId}`,
     method: "POST",
     timeout: 10,
   });
-  gather.play(audioBlobUrl);
-  gather.say("Press 1 when you are awake.");
-  response.say("We did not receive confirmation. Goodbye.");
+
+  for (let playCount = 0; playCount < 3; playCount += 1) {
+    gather.play(audioBlobUrl);
+  }
+
+  response.hangup();
   return response.toString();
 }

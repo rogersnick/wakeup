@@ -1,11 +1,16 @@
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
+type IconCircleSize = "default" | "lg";
+
+type IconCircleVariant = "primary" | "secondary" | "accent" | "quaternary" | "muted";
+
 type IconCircleProps = {
   icon: LucideIcon;
   className?: string;
   iconClassName?: string;
-  size?: "default" | "lg";
+  size?: IconCircleSize;
+  variant?: IconCircleVariant;
 };
 
 export function IconCircle({
@@ -17,14 +22,15 @@ export function IconCircle({
   return (
     <div
       className={cn(
-        "flex items-center justify-center rounded-full bg-white transition-transform duration-200 group-hover:scale-110",
-        size === "default" ? "h-14 w-14" : "h-16 w-16",
+        "flex items-center justify-center border border-foreground bg-background text-foreground",
+        "transition-colors duration-100 group-hover:bg-foreground group-hover:text-background",
+        size === "default" ? "h-12 w-12" : "h-14 w-14",
         className,
       )}
     >
       <Icon
-        className={cn("text-primary", size === "default" ? "h-7 w-7" : "h-8 w-8", iconClassName)}
-        strokeWidth={2.25}
+        className={cn(size === "default" ? "h-5 w-5" : "h-6 w-6", iconClassName)}
+        strokeWidth={1.5}
       />
     </div>
   );

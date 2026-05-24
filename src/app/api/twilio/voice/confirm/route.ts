@@ -6,7 +6,11 @@ import { validateTwilioRequest } from "@/lib/twilio";
 import {
   markWakeUpAttemptFailed,
   markWakeUpConfirmed,
+  snoozeWakeUp,
 } from "@/lib/wakeup/cron";
+
+const SILENT_HANGUP_TWIML =
+  '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
 
 function formDataToRecord(formData: FormData): Record<string, string> {
   const params: Record<string, string> = {};
@@ -57,16 +61,27 @@ export async function POST(request: Request) {
 
   if (digits === "1") {
     await markWakeUpConfirmed(wakeupId);
-    return new Response(
-      '<?xml version="1.0" encoding="UTF-8"?><Response><Say>Good morning. Stay awake.</Say></Response>',
-      { headers: { "Content-Type": "text/xml" } },
-    );
+    return new Response(SILENT_HANGUP_TWIML, {
+      headers: { "Content-Type": "text/xml" },
+    });
+  }
+
+  if (digits === "2") {
+    const snoozed = await snoozeWakeUp(wakeupId);
+    if (snoozed) {
+      return new Response(SILENT_HANGUP_TWIML, {
+        headers: { "Content-Type": "text/xml" },
+      });
+    }
+
+    return new Response(SILENT_HANGUP_TWIML, {
+      headers: { "Content-Type": "text/xml" },
+    });
   }
 
   await markWakeUpAttemptFailed(wakeupId, "wrong_or_missing_digit");
 
-  return new Response(
-    '<?xml version="1.0" encoding="UTF-8"?><Response><Say>Confirmation not received.</Say></Response>',
-    { headers: { "Content-Type": "text/xml" } },
-  );
+  return new Response(SILENT_HANGUP_TWIML, {
+    headers: { "Content-Type": "text/xml" },
+  });
 }

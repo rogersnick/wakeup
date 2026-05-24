@@ -1,17 +1,32 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardEyebrow, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { IconCircle } from "@/components/ui/icon-circle";
+import { dispatchProfileUpdated } from "@/lib/profile-events";
 
 type Props = {
   verifiedPhone?: string | null;
   onVerified: () => void;
 };
+
+function formatPhoneDisplay(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
+  if (digits.length < 4) return digits;
+  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function friendlyE164(e164: string): string {
+  const digits = e164.replace(/\D/g, "");
+  const local = digits.startsWith("1") ? digits.slice(1) : digits;
+  if (local.length !== 10) return e164;
+  return `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(6)}`;
+}
 
 export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
   const [phone, setPhone] = useState("");
@@ -20,29 +35,6 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  async function releasePhone() {
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const response = await fetch("/api/phone/release", { method: "POST" });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error ?? "Failed to release phone number");
-      }
-      setPhone("");
-      setCode("");
-      setSentTo(null);
-      setMessage("Phone number released. Verify a new number to schedule wake-ups.");
-      onVerified();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to release phone number");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function sendCode() {
     setLoading(true);
@@ -61,7 +53,7 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
         throw new Error(data.error ?? "Failed to send code");
       }
       setSentTo(data.phoneE164);
-      setMessage(`Code sent to ${data.phoneE164}`);
+      setMessage(`Code sent to ${friendlyE164(data.phoneE164)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send code");
     } finally {
@@ -94,54 +86,35 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
   }
 
   if (verifiedPhone) {
-    return (
-      <Card variant="success" className="p-8">
-        <div className="flex items-start gap-4">
-          <IconCircle
-            icon={CheckCircle2}
-            iconClassName="text-secondary"
-            className="shrink-0 bg-emerald-100"
-          />
-          <div className="min-w-0 flex-1">
-            <CardTitle className="text-emerald-900">Phone verified</CardTitle>
-            <CardDescription className="text-emerald-800">{verifiedPhone}</CardDescription>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-4 border-emerald-300 text-emerald-900 hover:bg-emerald-100 hover:text-emerald-950"
-              disabled={loading}
-              onClick={releasePhone}
-            >
-              Change phone number
-            </Button>
-          </div>
-        </div>
-        {error ? <Alert variant="error" className="mt-4">{error}</Alert> : null}
-      </Card>
-    );
+    return null;
   }
 
   return (
-    <Card className="p-8">
-      <CardTitle>Verify your phone</CardTitle>
+    <Card className="p-8" variant="primary">
+      <CardEyebrow>Step 1</CardEyebrow>
+      <CardTitle className="mt-2 text-2xl">Verify your phone</CardTitle>
       <CardDescription>
-        Required before scheduling. Use E.164 format like +14165551234.
+        Enter your mobile number and we'll text you a code.
       </CardDescription>
 
       <div className="mt-6 grid gap-4">
         <Input
-          placeholder="+14165551234"
+          placeholder="(555) 123-4567"
           value={phone}
-          onChange={(event) => setPhone(event.target.value)}
+          onChange={(event) => setPhone(formatPhoneDisplay(event.target.value))}
+          inputMode="tel"
+          autoComplete="tel"
         />
-        <Button
-          type="button"
-          disabled={loading || phone.trim().length === 0}
-          onClick={sendCode}
-        >
-          Send code
-        </Button>
+        {!sentTo ? (
+          <Button
+            type="button"
+            disabled={loading || phone.replace(/\D/g, "").length < 10}
+            onClick={sendCode}
+            className="hover:border-white hover:bg-white hover:text-[#ff6a00]"
+          >
+            Send code
+          </Button>
+        ) : null}
 
         {sentTo ? (
           <>

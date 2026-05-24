@@ -1,5 +1,5 @@
 export type WeatherSnapshot = {
-  tempF: number;
+  tempC: number;
   description: string;
   cityLabel: string;
 };
@@ -64,7 +64,18 @@ function formatCityLabel(result: NonNullable<GeocodingResult["results"]>[number]
   return parts.join(", ");
 }
 
-export async function fetchWeatherForCity(city: string): Promise<WeatherSnapshot | null> {
+export const CITY_WEATHER_FORMAT_HINT =
+  "Use just the city name (e.g. Calgary) or city and country (e.g. Calgary, Canada). Province and state abbreviations like AB or MA don't work.";
+
+export const CITY_WEATHER_NOT_FOUND_ERROR = `We couldn't find that city for weather lookup. ${CITY_WEATHER_FORMAT_HINT}`;
+
+export type ResolvedCityLocation = {
+  cityLabel: string;
+  latitude: number;
+  longitude: number;
+};
+
+async function geocodeCity(city: string): Promise<ResolvedCityLocation | null> {
   const geocodeUrl = new URL("https://geocoding-api.open-meteo.com/v1/search");
   geocodeUrl.searchParams.set("name", city.trim());
   geocodeUrl.searchParams.set("count", "1");
@@ -85,11 +96,35 @@ export async function fetchWeatherForCity(city: string): Promise<WeatherSnapshot
     return null;
   }
 
+  return {
+    cityLabel: formatCityLabel(location) || city.trim(),
+    latitude: location.latitude,
+    longitude: location.longitude,
+  };
+}
+
+export async function resolveCityForWeather(
+  city: string,
+): Promise<ResolvedCityLocation | null> {
+  const trimmed = city.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return geocodeCity(trimmed);
+}
+
+export async function fetchWeatherForCity(city: string): Promise<WeatherSnapshot | null> {
+  const location = await geocodeCity(city.trim());
+  if (!location) {
+    return null;
+  }
+
   const forecastUrl = new URL("https://api.open-meteo.com/v1/forecast");
   forecastUrl.searchParams.set("latitude", String(location.latitude));
   forecastUrl.searchParams.set("longitude", String(location.longitude));
   forecastUrl.searchParams.set("current", "temperature_2m,weather_code");
-  forecastUrl.searchParams.set("temperature_unit", "fahrenheit");
+  forecastUrl.searchParams.set("temperature_unit", "celsius");
   forecastUrl.searchParams.set("timezone", "auto");
 
   const forecastResponse = await fetch(forecastUrl);
@@ -104,8 +139,8 @@ export async function fetchWeatherForCity(city: string): Promise<WeatherSnapshot
   }
 
   return {
-    tempF: Math.round(tempC),
+    tempC: Math.round(tempC),
     description: weatherCodeToDescription(forecastData.current?.weather_code),
-    cityLabel: formatCityLabel(location) || city.trim(),
+    cityLabel: location.cityLabel,
   };
 }

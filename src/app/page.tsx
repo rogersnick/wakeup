@@ -1,162 +1,127 @@
 import { Show, SignInButton } from "@clerk/nextjs";
-import { AlarmClock, Mic, Phone } from "lucide-react";
+import { ArrowRight, CalendarClock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { IconCircle } from "@/components/ui/icon-circle";
 
-const features = [
-  {
-    title: "Verify phone",
-    body: "SMS OTP before anything is scheduled.",
-    icon: Phone,
-    variant: "primary" as const,
-    iconClassName: "text-primary",
-  },
-  {
-    title: "Generate audio",
-    body: "ElevenLabs turns your script into an MP3.",
-    icon: Mic,
-    variant: "secondary" as const,
-    iconClassName: "text-secondary",
-  },
-  {
-    title: "Call on time",
-    body: "Cron + Twilio dial you when nextAttemptAt hits.",
-    icon: AlarmClock,
-    variant: "accent" as const,
-    iconClassName: "text-accent",
-  },
+function AuthCta({ signedOutLabel, signedInLabel }: {
+  signedOutLabel: string;
+  signedInLabel: string;
+}) {
+  return (
+    <>
+      <Show when="signed-out">
+        <SignInButton mode="modal">
+          <Button size="lg" className="group gap-4">
+            {signedOutLabel}
+            <ArrowRight
+              className="h-4 w-4 transition-transform duration-100 group-hover:translate-x-1"
+              strokeWidth={1.5}
+            />
+          </Button>
+        </SignInButton>
+      </Show>
+      <Show when="signed-in">
+        <Link href="/dashboard">
+          <Button size="lg" className="group gap-4">
+            {signedInLabel}
+            <ArrowRight
+              className="h-4 w-4 transition-transform duration-100 group-hover:translate-x-1"
+              strokeWidth={1.5}
+            />
+          </Button>
+        </Link>
+      </Show>
+    </>
+  );
+}
+
+const taglines = [
+  {a: "Wake", b: "Up" }
 ];
 
 export default function Home() {
+  const tagline = taglines[Math.floor(Math.random() * taglines.length)];
   return (
-    <main>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-primary px-6 py-20 text-white">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-16 top-8 h-64 w-64 rounded-full bg-white/10"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-20 left-12 h-48 w-48 rotate-12 bg-white/5"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute right-1/4 top-1/2 h-32 w-32 rounded-full bg-white/5"
-        />
+    <main id="main-content" className="texture-paper bg-background text-foreground">
+      <a
+        href="#main-copy"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-60 focus:border-2 focus:border-foreground focus:bg-foreground focus:px-4 focus:py-3 focus:font-mono focus:text-xs focus:uppercase focus:tracking-widest focus:text-background"
+      >
+        Skip to content
+      </a>
 
-        <div className="relative mx-auto max-w-7xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-blue-100">
-            V0
-          </p>
-          <h1 className="max-w-3xl text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
-            Wake up to a call that knows your name.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-blue-100">
-            Verify your phone, write your message, and get an ElevenLabs voice call
-            at the time you choose. Press 1 to confirm you&apos;re awake.
-          </p>
-
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <Button
-                  size="lg"
-                  className="bg-white text-primary hover:bg-blue-50 hover:text-blue-700"
-                >
-                  Get started
-                </Button>
-              </SignInButton>
-            </Show>
-            <Show when="signed-in">
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  className="bg-white text-primary hover:bg-blue-50 hover:text-blue-700"
-                >
-                  Open dashboard
-                </Button>
-              </Link>
-            </Show>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="bg-muted px-6 py-20">
-        <div className="mx-auto max-w-7xl">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            How it works
-          </h2>
-          <p className="mt-3 max-w-2xl text-lg text-gray-600">
-            Three flat steps from setup to your morning call.
-          </p>
-
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            {features.map(({ title, body, icon, variant, iconClassName }) => (
-              <Card key={title} variant={variant} interactive className="p-8">
-                <IconCircle icon={icon} iconClassName={iconClassName} />
-                <CardTitle className="mt-6">{title}</CardTitle>
-                <CardDescription>{body}</CardDescription>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="bg-gray-900 px-6 py-20 text-white">
-        <div className="mx-auto grid max-w-7xl gap-8 sm:grid-cols-3">
-          {[
-            { value: "1 min", label: "Setup time", color: "text-primary" },
-            { value: "500", label: "Max script chars", color: "text-secondary" },
-            { value: "Press 1", label: "To confirm awake", color: "text-accent" },
-          ].map(({ value, label, color }) => (
-            <div key={label}>
-              <p className={`text-4xl font-extrabold tracking-tight ${color}`}>
-                {value}
-              </p>
-              <p className="mt-2 text-sm font-semibold uppercase tracking-wider text-gray-400">
-                {label}
+      <section className="texture-lines relative overflow-hidden px-6 py-20 sm:py-28 lg:py-36">
+        <div className="relative mx-auto grid max-w-6xl gap-16 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-end">
+          <div id="main-copy">
+            <div className="mb-10 flex items-center gap-4">
+              <div className="h-1 w-24 bg-foreground sm:w-36" aria-hidden />
+              <div className="h-4 w-4 border-2 border-foreground" aria-hidden />
+              <p className="font-mono text-xs font-medium uppercase tracking-widest">
+                AI wake-up calls
               </p>
             </div>
-          ))}
+
+            <h1 className="max-w-5xl font-serif text-[clamp(4.5rem,16vw,10rem)] font-semibold leading-none tracking-tighter">
+              {tagline.a}
+              <span className="block italic -mt-[0.1em]">{tagline.b}</span>
+            </h1>
+
+            <p className="mt-10 max-w-2xl text-xl leading-relaxed text-muted-foreground sm:text-2xl">
+              Some mornings, you can&apos;t afford to hit snooze. The flight.
+              The interview. The thing that only comes once. AlarmCall is for
+              those mornings — a real phone call, at the exact time you set,
+              that doesn&apos;t stop until you answer.
+            </p>
+
+            <div className="mt-12">
+              <AuthCta signedOutLabel="Begin" signedInLabel="Open dashboard" />
+            </div>
+          </div>
+
+          <aside className="border-2 border-foreground bg-background p-6 lg:p-8">
+            <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Tomorrow
+            </p>
+            <p className="mt-6 font-serif text-6xl leading-none tracking-tight">
+              06:30
+            </p>
+            <div className="my-8 h-1 bg-foreground" aria-hidden />
+            <p className="text-lg italic leading-relaxed">
+              &ldquo;Good morning. Stand up, press 1, and start before the day
+              starts negotiating.&rdquo;
+            </p>
+            <div className="mt-8 grid grid-cols-2 border border-foreground font-mono text-xs uppercase tracking-widest">
+              <span className="border-r border-foreground p-3">Press 1</span>
+              <span className="p-3">Awake</span>
+            </div>
+          </aside>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-accent px-6 py-20">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
+      <section className="relative overflow-hidden border-t-4 border-foreground bg-foreground px-6 py-24 text-background lg:py-32">
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-80 opacity-[0.05]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at top center, #000000, transparent 70%)",
+          }}
+        />
+        <div className="relative mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Ready to stop snoozing?
+            <div className="mb-8 flex items-center gap-4">
+              <CalendarClock className="h-6 w-6" strokeWidth={1.5} />
+              <p className="font-mono text-xs font-medium uppercase tracking-widest">
+                Schedule the first call
+              </p>
+            </div>
+            <h2 className="max-w-4xl font-serif text-6xl leading-none tracking-tighter sm:text-8xl">
+              Make tomorrow non-negotiable.
             </h2>
-            <p className="mt-3 max-w-xl text-lg text-amber-950/80">
-              Schedule your first wake-up call in under a minute.
-            </p>
           </div>
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <Button
-                size="lg"
-                className="bg-gray-900 text-white hover:bg-gray-800"
-              >
-                Get started free
-              </Button>
-            </SignInButton>
-          </Show>
-          <Show when="signed-in">
-            <Link href="/dashboard">
-              <Button
-                size="lg"
-                className="bg-gray-900 text-white hover:bg-gray-800"
-              >
-                Go to dashboard
-              </Button>
-            </Link>
-          </Show>
+          <div className="lg:justify-self-end">
+            <AuthCta signedOutLabel="Start free" signedInLabel="Schedule now" />
+          </div>
         </div>
       </section>
     </main>

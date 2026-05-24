@@ -25,5 +25,5 @@ export function normalizePhoneE164(phone: string): string {
   if (digits.length === 11 && digits.startsWith("1")) {
     return `+${digits}`;
   }
-  throw new Error("Enter a valid phone number with country code.");
+  throw new Error("Enter a valid 10-digit US phone number.");
 }

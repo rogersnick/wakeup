@@ -24,6 +24,7 @@ export const wakeupScriptModeEnum = pgEnum("wakeup_script_mode", [
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
+  displayName: text("display_name"),
   phoneE164: text("phone_e164"),
   phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
   timezone: text("timezone").notNull().default("America/Toronto"),
@@ -79,6 +80,7 @@ export const wakeups = pgTable(
     retryIntervalMinutes: integer("retry_interval_minutes")
       .notNull()
       .default(5),
+    snoozeCount: integer("snooze_count").notNull().default(0),
     lastCallSid: text("last_call_sid"),
     lastCallStatus: text("last_call_status"),
     createdAt: timestamp("created_at", { withTimezone: true })
