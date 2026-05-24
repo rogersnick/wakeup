@@ -4,6 +4,10 @@ import { users, wakeups } from "@/lib/db/schema";
 import { generateWakeUpAudio } from "@/lib/elevenlabs";
 import { storeWakeUpAudio } from "@/lib/blob";
 import {
+  CITY_WEATHER_NOT_FOUND_ERROR,
+  resolveCityForWeather,
+} from "@/lib/weather";
+import {
   computeFirstAttemptAt,
   type RecurrenceRule,
 } from "@/lib/wakeup/recurrence";
@@ -80,7 +84,13 @@ export async function scheduleWakeup(input: ScheduleWakeupInput) {
 
   const user = await assertPhoneVerified(input.userId);
   if (scriptMode === "dynamic" && !user.city?.trim()) {
-    throw new Error("Set your city on your profile before scheduling a surprise wake-up.");
+    throw new Error("Set your city before scheduling a weather report wake-up.");
+  }
+  if (scriptMode === "dynamic") {
+    const resolved = await resolveCityForWeather(user.city!);
+    if (!resolved) {
+      throw new Error(CITY_WEATHER_NOT_FOUND_ERROR);
+    }
   }
 
   const timezone = input.timezone ?? user.timezone;

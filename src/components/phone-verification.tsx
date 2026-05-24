@@ -1,12 +1,11 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { IconCircle } from "@/components/ui/icon-circle";
+import { dispatchProfileUpdated } from "@/lib/profile-events";
 
 type Props = {
   verifiedPhone?: string | null;
@@ -20,29 +19,6 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  async function releasePhone() {
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const response = await fetch("/api/phone/release", { method: "POST" });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error ?? "Failed to release phone number");
-      }
-      setPhone("");
-      setCode("");
-      setSentTo(null);
-      setMessage("Phone number released. Verify a new number to schedule wake-ups.");
-      onVerified();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to release phone number");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function sendCode() {
     setLoading(true);
@@ -94,32 +70,7 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
   }
 
   if (verifiedPhone) {
-    return (
-      <Card variant="success" className="p-8">
-        <div className="flex items-start gap-4">
-          <IconCircle
-            icon={CheckCircle2}
-            iconClassName="text-secondary"
-            className="shrink-0 bg-emerald-100"
-          />
-          <div className="min-w-0 flex-1">
-            <CardTitle className="text-emerald-900">Phone verified</CardTitle>
-            <CardDescription className="text-emerald-800">{verifiedPhone}</CardDescription>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-4 border-emerald-300 text-emerald-900 hover:bg-emerald-100 hover:text-emerald-950"
-              disabled={loading}
-              onClick={releasePhone}
-            >
-              Change phone number
-            </Button>
-          </div>
-        </div>
-        {error ? <Alert variant="error" className="mt-4">{error}</Alert> : null}
-      </Card>
-    );
+    return null;
   }
 
   return (

@@ -59,7 +59,11 @@ export async function initiateWakeUpCall(input: {
   return call.sid;
 }
 
-export function buildWakeUpTwiml(audioBlobUrl: string, wakeupId: string) {
+export function buildWakeUpTwiml(
+  audioBlobUrl: string,
+  wakeupId: string,
+  snoozeMinutes = 5,
+) {
   const appUrl = getAppUrl().startsWith("http")
     ? getAppUrl()
     : `https://${getAppUrl()}`;
@@ -72,7 +76,9 @@ export function buildWakeUpTwiml(audioBlobUrl: string, wakeupId: string) {
     timeout: 10,
   });
   gather.play(audioBlobUrl);
-  gather.say("Press 1 when you are awake.");
+  gather.say(
+    `Press 1 when you are awake. Press 2 to snooze for ${snoozeMinutes} minutes.`,
+  );
   response.say("We did not receive confirmation. Goodbye.");
   return response.toString();
 }

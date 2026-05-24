@@ -63,10 +63,10 @@ function ColumnButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex h-11 min-w-[3rem] items-center justify-center rounded-md px-3 text-sm font-bold transition-all duration-200 hover:scale-105",
+        "flex h-11 min-w-[3.25rem] items-center justify-center rounded-md px-2 text-sm font-bold transition-colors",
         selected
-          ? "bg-primary text-white"
-          : "bg-background text-foreground hover:bg-gray-200",
+          ? "bg-primary text-primary-foreground"
+          : "bg-background text-foreground hover:bg-border",
       )}
     >
       {children}
@@ -115,12 +115,12 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         <span className="ml-2 text-2xl font-bold text-primary">{period}</span>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+      <div className="mt-6 grid gap-6 sm:grid-cols-[minmax(7rem,1fr)_minmax(10rem,1.35fr)_auto]">
+        <div className="min-w-0">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Hour
           </p>
-          <div className="grid max-h-44 grid-cols-3 gap-2 overflow-y-auto pr-1">
+          <div className="grid grid-cols-3 gap-2">
             {HOURS.map((hour) => (
               <ColumnButton
                 key={hour}
@@ -134,11 +134,11 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           </div>
         </div>
 
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <div className="min-w-0">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Minute
           </p>
-          <div className="grid max-h-44 grid-cols-3 gap-2 overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {MINUTES.map((min) => (
               <ColumnButton
                 key={min}
@@ -152,8 +152,8 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           </div>
         </div>
 
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <div className="sm:min-w-[4.5rem]">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Period
           </p>
           <div className="flex flex-col gap-2">
@@ -163,10 +163,10 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
                 type="button"
                 onClick={() => update({ period: option })}
                 className={cn(
-                  "flex h-14 w-16 items-center justify-center rounded-md text-base font-bold transition-all duration-200 hover:scale-105",
+                  "flex h-11 w-full min-w-[3.25rem] items-center justify-center rounded-md text-sm font-bold transition-colors sm:w-16 sm:h-14 sm:text-base",
                   period === option
-                    ? "bg-accent text-amber-950"
-                    : "bg-background text-foreground hover:bg-gray-200",
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-background text-foreground hover:bg-border",
                 )}
               >
                 {option}
@@ -176,7 +176,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         </div>
       </div>
 
-      <p className="mt-4 text-center text-sm text-gray-600">
+      <p className="mt-4 text-center text-sm text-muted-foreground">
         Tap hour, minute, and AM/PM to set your wake-up time.
       </p>
     </div>

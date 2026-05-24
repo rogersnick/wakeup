@@ -1,4 +1,5 @@
 import { and, eq, lte, sql } from "drizzle-orm";
+import { addMinutes } from "date-fns";
 import { getDb } from "@/lib/db";
 import { users, wakeupAttempts, wakeups } from "@/lib/db/schema";
 import { initiateWakeUpCall } from "@/lib/twilio";
@@ -231,6 +232,42 @@ export async function markWakeUpAttemptFailed(wakeupId: string, reason: string) 
       updatedAt: now,
     })
     .where(eq(wakeups.id, wakeupId))
+    .returning();
+
+  return updated;
+}
+
+export async function snoozeWakeUp(
+  wakeupId: string,
+  snoozeMinutes = 5,
+) {
+  const db = getDb();
+  const now = new Date();
+  const wakeup = await db.query.wakeups.findFirst({
+    where: eq(wakeups.id, wakeupId),
+  });
+
+  if (!wakeup || wakeup.status !== "calling") {
+    return null;
+  }
+
+  const nextAttemptCount = wakeup.attemptCount + 1;
+
+  if (nextAttemptCount >= wakeup.maxAttempts) {
+    return markWakeUpAttemptFailed(wakeupId, "snooze_limit_reached");
+  }
+
+  const [updated] = await db
+    .update(wakeups)
+    .set({
+      status: "scheduled",
+      attemptCount: nextAttemptCount,
+      snoozeCount: wakeup.snoozeCount + 1,
+      nextAttemptAt: addMinutes(now, snoozeMinutes),
+      lastCallStatus: "snoozed",
+      updatedAt: now,
+    })
+    .where(and(eq(wakeups.id, wakeupId), eq(wakeups.status, "calling")))
     .returning();
 
   return updated;

@@ -6,6 +6,7 @@ import { validateTwilioRequest } from "@/lib/twilio";
 import {
   markWakeUpAttemptFailed,
   markWakeUpConfirmed,
+  snoozeWakeUp,
 } from "@/lib/wakeup/cron";
 
 function formDataToRecord(formData: FormData): Record<string, string> {
@@ -59,6 +60,21 @@ export async function POST(request: Request) {
     await markWakeUpConfirmed(wakeupId);
     return new Response(
       '<?xml version="1.0" encoding="UTF-8"?><Response><Say>Good morning. Stay awake.</Say></Response>',
+      { headers: { "Content-Type": "text/xml" } },
+    );
+  }
+
+  if (digits === "2") {
+    const snoozed = await snoozeWakeUp(wakeupId);
+    if (snoozed) {
+      return new Response(
+        '<?xml version="1.0" encoding="UTF-8"?><Response><Say>Snoozed. We will call you back in five minutes.</Say></Response>',
+        { headers: { "Content-Type": "text/xml" } },
+      );
+    }
+
+    return new Response(
+      '<?xml version="1.0" encoding="UTF-8"?><Response><Say>Unable to snooze this wake-up.</Say></Response>',
       { headers: { "Content-Type": "text/xml" } },
     );
   }

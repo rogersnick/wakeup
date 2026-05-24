@@ -14,7 +14,7 @@ export async function prepareDynamicWakeUpAudio(
   user: User,
 ): Promise<PreparedDynamicWakeUp> {
   if (!user.city?.trim()) {
-    throw new Error("City is required for surprise wake-ups.");
+    throw new Error("City is required for weather report wake-ups.");
   }
 
   const weather = await fetchWeatherForCity(user.city);
@@ -23,6 +23,7 @@ export async function prepareDynamicWakeUpAudio(
     weather,
     timezone: user.timezone,
     toneHint: wakeup.scriptText.trim() || null,
+    firstName: user.displayName,
   });
 
   const audio = await generateWakeUpAudio(scriptText, wakeup.voiceId);

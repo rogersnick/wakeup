@@ -2,6 +2,38 @@ import { eq } from "drizzle-orm";
 import { requireUserId } from "@/lib/api";
 import { getDb } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { getOrCreateUserWithProfile } from "@/lib/users";
+import {
+  CITY_WEATHER_NOT_FOUND_ERROR,
+  resolveCityForWeather,
+} from "@/lib/weather";
+
+async function getCityResolvedLabel(city: string | null | undefined) {
+  if (!city?.trim()) {
+    return null;
+  }
+
+  const resolved = await resolveCityForWeather(city);
+  return resolved?.cityLabel ?? null;
+}
+
+function serializeUser(user: {
+  id: string;
+  displayName: string | null;
+  phoneE164: string | null;
+  phoneVerifiedAt: Date | null;
+  timezone: string;
+  city: string | null;
+}) {
+  return {
+    id: user.id,
+    displayName: user.displayName,
+    phoneE164: user.phoneE164,
+    phoneVerifiedAt: user.phoneVerifiedAt,
+    timezone: user.timezone,
+    city: user.city,
+  };
+}
 
 export async function GET() {
   const authResult = await requireUserId();
@@ -9,26 +41,12 @@ export async function GET() {
     return authResult.error;
   }
 
-  const db = getDb();
-  let user = await db.query.users.findFirst({
-    where: eq(users.id, authResult.userId),
-  });
-
-  if (!user) {
-    const [created] = await db
-      .insert(users)
-      .values({ id: authResult.userId })
-      .returning();
-    user = created;
-  }
+  const user = await getOrCreateUserWithProfile(authResult.userId);
 
   return Response.json({
     user: {
-      id: user.id,
-      phoneE164: user.phoneE164,
-      phoneVerifiedAt: user.phoneVerifiedAt,
-      timezone: user.timezone,
-      city: user.city,
+      ...serializeUser(user),
+      cityResolvedLabel: await getCityResolvedLabel(user.city),
     },
   });
 }
@@ -55,6 +73,13 @@ export async function PATCH(request: Request) {
     );
   }
 
+  const resolved = await resolveCityForWeather(city);
+  if (!resolved) {
+    return Response.json({ error: CITY_WEATHER_NOT_FOUND_ERROR }, { status: 400 });
+  }
+
+  await getOrCreateUserWithProfile(authResult.userId);
+
   const db = getDb();
   const [updated] = await db
     .update(users)
@@ -63,29 +88,13 @@ export async function PATCH(request: Request) {
     .returning();
 
   if (!updated) {
-    const [created] = await db
-      .insert(users)
-      .values({ id: authResult.userId, city })
-      .returning();
-
-    return Response.json({
-      user: {
-        id: created.id,
-        phoneE164: created.phoneE164,
-        phoneVerifiedAt: created.phoneVerifiedAt,
-        timezone: created.timezone,
-        city: created.city,
-      },
-    });
+    return Response.json({ error: "User not found." }, { status: 404 });
   }
 
   return Response.json({
     user: {
-      id: updated.id,
-      phoneE164: updated.phoneE164,
-      phoneVerifiedAt: updated.phoneVerifiedAt,
-      timezone: updated.timezone,
-      city: updated.city,
+      ...serializeUser(updated),
+      cityResolvedLabel: resolved.cityLabel,
     },
   });
 }

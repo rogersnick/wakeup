@@ -8,13 +8,17 @@ type CardProps = HTMLAttributes<HTMLElement> & {
   interactive?: boolean;
 };
 
+/**
+ * "Sticker Card": chunky 2px border, hard offset shadow, wiggle+scale on hover.
+ * Shadow color shifts with the variant to create a confetti effect.
+ */
 const variantClasses: Record<CardVariant, string> = {
-  default: "bg-background text-foreground",
-  muted: "bg-muted text-foreground",
-  primary: "bg-blue-50 text-foreground hover:bg-blue-100",
-  secondary: "bg-emerald-50 text-foreground hover:bg-emerald-100",
-  accent: "bg-amber-50 text-foreground hover:bg-amber-100",
-  success: "bg-emerald-50 text-emerald-900",
+  default:   "bg-card text-foreground border-2 border-border shadow-[6px_6px_0px_0px_var(--border)]",
+  muted:     "bg-muted text-foreground border-2 border-border",
+  primary:   "bg-card text-foreground border-2 border-primary shadow-[6px_6px_0px_0px_#4c1d95]",
+  secondary: "bg-card text-foreground border-2 border-secondary shadow-[6px_6px_0px_0px_#9d174d]",
+  accent:    "bg-card text-foreground border-2 border-accent shadow-[6px_6px_0px_0px_#92400e]",
+  success:   "bg-card text-foreground border-2 border-quaternary shadow-[6px_6px_0px_0px_#064e3b]",
 };
 
 export function Card({
@@ -26,10 +30,13 @@ export function Card({
   return (
     <section
       className={cn(
-        "rounded-lg p-6 shadow-none",
+        "rounded-xl p-6",
         variantClasses[variant],
-        interactive &&
-          "group cursor-pointer transition-all duration-200 hover:scale-[1.02]",
+        interactive && [
+          "group cursor-pointer",
+          "transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+          "hover:-rotate-1 hover:scale-[1.02]",
+        ],
         className,
       )}
       {...props}
@@ -43,7 +50,10 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("text-lg font-bold tracking-tight", className)}
+      className={cn(
+        "font-sans text-lg font-bold tracking-tight text-foreground",
+        className,
+      )}
       {...props}
     />
   );
@@ -54,6 +64,9 @@ export function CardDescription({
   ...props
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("mt-1 text-sm leading-6 text-gray-600", className)} {...props} />
+    <p
+      className={cn("mt-1 text-sm leading-6 text-muted-foreground", className)}
+      {...props}
+    />
   );
 }

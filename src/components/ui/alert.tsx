@@ -8,9 +8,9 @@ type AlertProps = HTMLAttributes<HTMLParagraphElement> & {
 };
 
 const variantClasses: Record<AlertVariant, string> = {
-  success: "text-emerald-700",
-  error: "text-red-600",
-  info: "text-gray-600",
+  success: "text-quaternary",
+  error:   "text-red-400",
+  info:    "text-muted-foreground",
 };
 
 export function Alert({ className, variant = "info", ...props }: AlertProps) {

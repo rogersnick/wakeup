@@ -1,26 +1,57 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, RefreshCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { formatWakeupMessage, type WakeupDisplay } from "@/lib/wakeup/display";
 
-type Wakeup = {
+const COLLAPSED_WAKEUP_COUNT = 3;
+
+type WakeupAttemptSummary = {
   id: string;
-  type: "one_shot" | "recurring";
-  scheduledTimeLocal: string;
-  scheduledDate: string | null;
-  recurrence: { days: number[] } | null;
-  scriptText: string;
-  scriptMode: "static" | "dynamic";
-  resolvedScriptText: string | null;
+  attemptNumber: number;
   status: string;
-  nextAttemptAt: string;
-  attemptCount: number;
-  maxAttempts: number;
+  gatherResult: string | null;
+  startedAt: string;
+  completedAt: string | null;
 };
+
+function formatAttemptHistory(attempts: WakeupAttemptSummary[]) {
+  if (attempts.length === 0) {
+    return null;
+  }
+
+  const callLabel = `${attempts.length} call${attempts.length === 1 ? "" : "s"}`;
+  const confirmedAttempt = [...attempts]
+    .reverse()
+    .find((attempt) => attempt.gatherResult === "1");
+
+  if (confirmedAttempt?.completedAt) {
+    const confirmedAt = new Date(confirmedAttempt.completedAt).toLocaleTimeString(
+      undefined,
+      { hour: "numeric", minute: "2-digit" },
+    );
+    return `${callLabel} · confirmed at ${confirmedAt}`;
+  }
+
+  const lastAttempt = attempts[attempts.length - 1];
+  if (lastAttempt.gatherResult === "2") {
+    return `${callLabel} · last snoozed`;
+  }
+
+  if (lastAttempt.completedAt) {
+    const lastAt = new Date(lastAttempt.completedAt).toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    return `${callLabel} · last call ${lastAt}`;
+  }
+
+  return callLabel;
+}
 
 function statusVariant(status: string): "default" | "primary" | "secondary" | "accent" | "success" | "warning" {
   switch (status) {
@@ -39,16 +70,24 @@ function statusVariant(status: string): "default" | "primary" | "secondary" | "a
 }
 
 export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
-  const [wakeups, setWakeups] = useState<Wakeup[]>([]);
+  const [wakeups, setWakeups] = useState<WakeupDisplay[]>([]);
+  const [attemptHistory, setAttemptHistory] = useState<
+    Record<string, string | null>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function fetchWakeups() {
-      setLoading(true);
+      if (!hasLoadedOnce.current) {
+        setLoading(true);
+      }
       setError(null);
 
       try {
@@ -61,6 +100,32 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
           throw new Error(data.error ?? "Failed to load wake-ups");
         }
         setWakeups(data.wakeups);
+
+        const historyEntries = await Promise.all(
+          (data.wakeups as WakeupDisplay[]).map(async (wakeup) => {
+            try {
+              const attemptsResponse = await fetch(
+                `/api/wakeups/${wakeup.id}/attempts`,
+              );
+              if (!attemptsResponse.ok) {
+                return [wakeup.id, null] as const;
+              }
+              const attemptsData = (await attemptsResponse.json()) as {
+                attempts: WakeupAttemptSummary[];
+              };
+              return [
+                wakeup.id,
+                formatAttemptHistory(attemptsData.attempts),
+              ] as const;
+            } catch {
+              return [wakeup.id, null] as const;
+            }
+          }),
+        );
+
+        if (!cancelled) {
+          setAttemptHistory(Object.fromEntries(historyEntries));
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load wake-ups");
@@ -68,6 +133,7 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
       } finally {
         if (!cancelled) {
           setLoading(false);
+          hasLoadedOnce.current = true;
         }
       }
     }
@@ -80,17 +146,130 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
   }, [refreshCount, refreshKey]);
 
   async function cancelWakeUp(id: string) {
-    const response = await fetch(`/api/wakeups/${id}`, { method: "DELETE" });
-    if (!response.ok) {
-      const data = await response.json();
-      setError(data.error ?? "Failed to cancel wake-up");
+    if (cancellingId) {
       return;
     }
-    setRefreshCount((value) => value + 1);
+
+    setCancellingId(id);
+    setError(null);
+
+    const previousWakeups = wakeups;
+    setWakeups((current) =>
+      current.map((wakeup) =>
+        wakeup.id === id ? { ...wakeup, status: "cancelled" } : wakeup,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/wakeups/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error ?? "Failed to cancel wake-up");
+      }
+      setRefreshCount((value) => value + 1);
+    } catch (err) {
+      setWakeups(previousWakeups);
+      setError(err instanceof Error ? err.message : "Failed to cancel wake-up");
+    } finally {
+      setCancellingId(null);
+    }
+  }
+
+  const hasHiddenWakeups = wakeups.length > COLLAPSED_WAKEUP_COUNT;
+  const visibleWakeups =
+    expanded || !hasHiddenWakeups
+      ? wakeups
+      : wakeups.slice(0, COLLAPSED_WAKEUP_COUNT);
+  const hiddenCount = wakeups.length - COLLAPSED_WAKEUP_COUNT;
+
+  function renderWakeup(wakeup: WakeupDisplay) {
+    const message = formatWakeupMessage(wakeup);
+
+    return (
+      <li
+        key={wakeup.id}
+        className="rounded-xl bg-card border-2 border-border p-5 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.01] hover:border-primary/50"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-sans font-bold text-foreground">
+              {wakeup.type === "one_shot" ? "One-shot" : "Recurring"} at{" "}
+              {wakeup.scheduledTimeLocal}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+              {wakeup.scriptMode === "dynamic" ? (
+                <>
+                  <span className="font-semibold text-foreground">Weather report</span>
+                  {wakeup.resolvedScriptText ? (
+                    <>
+                      {" "}
+                      — Last message: &ldquo;{wakeup.resolvedScriptText}&rdquo;
+                    </>
+                  ) : (
+                    <> — {message}</>
+                  )}
+                </>
+              ) : (
+                wakeup.scriptText
+              )}
+            </p>
+          </div>
+          <Badge variant={statusVariant(wakeup.status)}>{wakeup.status}</Badge>
+        </div>
+
+        <dl className="mt-4 grid gap-1 text-sm text-muted-foreground">
+          <div>
+            <dt className="inline font-semibold text-foreground/70">
+              Next attempt:{" "}
+            </dt>
+            <dd className="inline">
+              {new Date(wakeup.nextAttemptAt).toLocaleString()}
+            </dd>
+          </div>
+          <div>
+            <dt className="inline font-semibold text-foreground/70">
+              Attempts:{" "}
+            </dt>
+            <dd className="inline">
+              {wakeup.attemptCount}/{wakeup.maxAttempts}
+            </dd>
+          </div>
+          {wakeup.snoozeCount > 0 ? (
+            <div>
+              <dt className="inline font-semibold text-foreground/70">
+                Snoozes:{" "}
+              </dt>
+              <dd className="inline">{wakeup.snoozeCount}</dd>
+            </div>
+          ) : null}
+          {attemptHistory[wakeup.id] ? (
+            <div>
+              <dt className="inline font-semibold text-foreground/70">
+                Call history:{" "}
+              </dt>
+              <dd className="inline">{attemptHistory[wakeup.id]}</dd>
+            </div>
+          ) : null}
+        </dl>
+
+        {wakeup.status !== "cancelled" && wakeup.status !== "confirmed" ? (
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            disabled={cancellingId !== null}
+            onClick={() => void cancelWakeUp(wakeup.id)}
+            className="mt-4"
+          >
+            {cancellingId === wakeup.id ? "Cancelling..." : "Cancel"}
+          </Button>
+        ) : null}
+      </li>
+    );
   }
 
   return (
-    <Card className="p-8">
+    <Card className="p-8" variant="default">
       <div className="flex items-center justify-between gap-3">
         <div>
           <CardTitle>Your wake-ups</CardTitle>
@@ -100,6 +279,7 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
           type="button"
           variant="ghost"
           size="sm"
+          disabled={loading}
           onClick={() => setRefreshCount((value) => value + 1)}
           className="gap-2"
         >
@@ -116,69 +296,28 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
       ) : null}
 
       <ul className="mt-6 grid gap-4">
-        {wakeups.map((wakeup) => (
-          <li
-            key={wakeup.id}
-            className="rounded-lg bg-muted p-5 transition-all duration-200 hover:scale-[1.01]"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-bold text-foreground">
-                  {wakeup.type === "one_shot" ? "One-shot" : "Recurring"} at{" "}
-                  {wakeup.scheduledTimeLocal}
-                </p>
-                <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                  {wakeup.scriptMode === "dynamic" ? (
-                    <>
-                      <span className="font-semibold text-gray-700">Surprise me</span>
-                      {wakeup.resolvedScriptText ? (
-                        <>
-                          {" "}
-                          — Last message: &ldquo;{wakeup.resolvedScriptText}&rdquo;
-                        </>
-                      ) : null}
-                    </>
-                  ) : (
-                    wakeup.scriptText
-                  )}
-                </p>
-              </div>
-              <Badge variant={statusVariant(wakeup.status)}>{wakeup.status}</Badge>
-            </div>
-
-            <dl className="mt-4 grid gap-1 text-sm text-gray-600">
-              <div>
-                <dt className="inline font-semibold text-gray-700">
-                  Next attempt:{" "}
-                </dt>
-                <dd className="inline">
-                  {new Date(wakeup.nextAttemptAt).toLocaleString()}
-                </dd>
-              </div>
-              <div>
-                <dt className="inline font-semibold text-gray-700">
-                  Attempts:{" "}
-                </dt>
-                <dd className="inline">
-                  {wakeup.attemptCount}/{wakeup.maxAttempts}
-                </dd>
-              </div>
-            </dl>
-
-            {wakeup.status !== "cancelled" && wakeup.status !== "confirmed" ? (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => void cancelWakeUp(wakeup.id)}
-                className="mt-4"
-              >
-                Cancel
-              </Button>
-            ) : null}
-          </li>
-        ))}
+        {visibleWakeups.map(renderWakeup)}
       </ul>
+
+      {!loading && hasHiddenWakeups ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-4 gap-2"
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <ChevronDown
+            className={[
+              "h-4 w-4 transition-transform duration-200",
+              expanded ? "rotate-180" : "",
+            ].join(" ")}
+          />
+          {expanded
+            ? "Show fewer wake-ups"
+            : `Show ${hiddenCount} more wake-up${hiddenCount === 1 ? "" : "s"}`}
+        </Button>
+      ) : null}
     </Card>
   );
 }

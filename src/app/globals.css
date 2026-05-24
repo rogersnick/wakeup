@@ -1,32 +1,74 @@
 @import "tailwindcss";
 
+/* ─── Dark-mode design tokens (always-on) ─────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
-  --primary: #3b82f6;
-  --secondary: #10b981;
-  --accent: #f59e0b;
-  --muted: #f3f4f6;
-  --border: #e5e7eb;
+  --background:           #0f0e17;
+  --foreground:           #f1f5f9;
+  --muted:                #1a1827;
+  --muted-foreground:     #94a3b8;
+
+  /* Violet — primary brand */
+  --primary:              #a78bfa;
+  --primary-foreground:   #0f0e17;
+  --primary-shadow:       #4c1d95;
+
+  /* Pink — playful pop */
+  --secondary:            #f9a8d4;
+  --secondary-foreground: #0f0e17;
+  --secondary-shadow:     #9d174d;
+
+  /* Amber/Yellow — optimism */
+  --accent:               #fde68a;
+  --accent-foreground:    #0f0e17;
+  --accent-shadow:        #92400e;
+
+  /* Emerald/Mint — freshness */
+  --quaternary:           #6ee7b7;
+  --quaternary-foreground: #0f0e17;
+  --quaternary-shadow:    #064e3b;
+
+  --border:               #2d2a3e;
+  --card:                 #1a1827;
+  --ring:                 #a78bfa;
 }
 
+/* ─── Tailwind v4 theme mapping ───────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-secondary: var(--secondary);
-  --color-accent: var(--accent);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --font-sans: var(--font-outfit);
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  --color-background:           var(--background);
+  --color-foreground:           var(--foreground);
+  --color-muted:                var(--muted);
+  --color-muted-foreground:     var(--muted-foreground);
+  --color-primary:              var(--primary);
+  --color-primary-foreground:   var(--primary-foreground);
+  --color-secondary:            var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent:               var(--accent);
+  --color-accent-foreground:    var(--accent-foreground);
+  --color-quaternary:           var(--quaternary);
+  --color-border:               var(--border);
+  --color-card:                 var(--card);
+  --color-ring:                 var(--ring);
+
+  /* Fonts */
+  --font-sans:  var(--font-outfit);
+  --font-body:  var(--font-jakarta, var(--font-outfit));
+
+  /* Radius scale */
+  --radius-sm:   8px;
+  --radius-md:   16px;
+  --radius-lg:   24px;
+  --radius-full: 9999px;
 }
 
+/* ─── Base ─────────────────────────────────────────────────────────── */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-jakarta, var(--font-outfit)), system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
 }
 
 input,
@@ -37,10 +79,43 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-  color: #6b7280;
+  color: var(--muted-foreground);
 }
 
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+/* ─── Animations ───────────────────────────────────────────────────── */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(3deg); }
+  75%       { transform: rotate(-3deg); }
+}
+
+@keyframes pop-in {
+  from { transform: scale(0.8); opacity: 0; }
+  70%  { transform: scale(1.05); opacity: 1; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Reduced motion ───────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
