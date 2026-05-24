@@ -1,5 +1,5 @@
 {
-  "name": "wakeup",
+  "name": "risecall",
   "version": "0.1.0",
   "private": true,
   "scripts": {

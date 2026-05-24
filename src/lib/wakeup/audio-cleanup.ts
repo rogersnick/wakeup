@@ -1,7 +1,7 @@
 import { del } from "@vercel/blob";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { wakeups } from "@/lib/db/schema";
+import { wakeups, type Wakeup } from "@/lib/db/schema";
 
 export async function deleteWakeUpAudio(audioBlobUrl: string) {
   if (!audioBlobUrl) {
@@ -11,7 +11,26 @@ export async function deleteWakeUpAudio(audioBlobUrl: string) {
   await del(audioBlobUrl);
 }
 
-export async function cleanupWakeUpAudio(wakeupId: string, audioBlobUrl: string) {
+function shouldCleanupAudio(wakeup: Wakeup): boolean {
+  if (wakeup.status === "calling") {
+    return false;
+  }
+
+  if (wakeup.status === "cancelled") {
+    return true;
+  }
+
+  if (wakeup.type === "one_shot") {
+    return wakeup.status === "confirmed" || wakeup.status === "exhausted";
+  }
+
+  return false;
+}
+
+export async function cleanupWakeUpAudio(
+  wakeupId: string,
+  audioBlobUrl: string | null,
+) {
   if (!audioBlobUrl) {
     return;
   }
@@ -25,6 +44,19 @@ export async function cleanupWakeUpAudio(wakeupId: string, audioBlobUrl: string)
   const db = getDb();
   await db
     .update(wakeups)
-    .set({ audioBlobUrl: "", updatedAt: new Date() })
+    .set({ audioBlobUrl: null, updatedAt: new Date() })
     .where(eq(wakeups.id, wakeupId));
+}
+
+export async function maybeCleanupWakeUpAudio(wakeupId: string) {
+  const db = getDb();
+  const wakeup = await db.query.wakeups.findFirst({
+    where: eq(wakeups.id, wakeupId),
+  });
+
+  if (!wakeup?.audioBlobUrl || !shouldCleanupAudio(wakeup)) {
+    return;
+  }
+
+  await cleanupWakeUpAudio(wakeup.id, wakeup.audioBlobUrl);
 }

@@ -2,7 +2,11 @@ import { and, eq, lte, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { users, wakeupAttempts, wakeups } from "@/lib/db/schema";
 import { initiateWakeUpCall } from "@/lib/twilio";
-import { cleanupWakeUpAudio } from "@/lib/wakeup/audio-cleanup";
+import {
+  cleanupWakeUpAudio,
+  maybeCleanupWakeUpAudio,
+} from "@/lib/wakeup/audio-cleanup";
+import { prepareDynamicWakeUpAudio } from "@/lib/wakeup/prepare-dynamic";
 import {
   computeNextOccurrence,
   computeRetryAttemptAt,
@@ -58,6 +62,36 @@ async function startWakeUpAttempt(wakeupId: string, now: Date) {
     return { wakeupId, started: false, reason: "missing_phone" };
   }
 
+  let preparedWakeup = locked;
+
+  if (locked.scriptMode === "dynamic" && locked.attemptCount === 0) {
+    try {
+      const prepared = await prepareDynamicWakeUpAudio(locked, user);
+      const [updated] = await db
+        .update(wakeups)
+        .set({
+          audioBlobUrl: prepared.audioBlobUrl,
+          resolvedScriptText: prepared.scriptText,
+          updatedAt: now,
+        })
+        .where(eq(wakeups.id, wakeupId))
+        .returning();
+
+      if (updated) {
+        preparedWakeup = updated;
+      }
+    } catch (error) {
+      console.error(`Failed to prepare dynamic wake-up ${wakeupId}`, error);
+      await markWakeUpAttemptFailed(wakeupId, "audio_prep_failed");
+      return { wakeupId, started: false, reason: "audio_prep_failed" };
+    }
+  }
+
+  if (!preparedWakeup.audioBlobUrl) {
+    await markWakeUpAttemptFailed(wakeupId, "missing_audio");
+    return { wakeupId, started: false, reason: "missing_audio" };
+  }
+
   const attemptNumber = locked.attemptCount + 1;
   const callSid = await initiateWakeUpCall({
     wakeupId: locked.id,
@@ -110,6 +144,7 @@ export async function markWakeUpConfirmed(wakeupId: string) {
         status: "scheduled",
         attemptCount: 0,
         nextAttemptAt,
+        resolvedScriptText: null,
         lastCallStatus: "confirmed",
         updatedAt: now,
       })
@@ -129,7 +164,6 @@ export async function markWakeUpConfirmed(wakeupId: string) {
     .where(eq(wakeups.id, wakeupId))
     .returning();
 
-  await cleanupWakeUpAudio(wakeup.id, wakeup.audioBlobUrl);
   return updated;
 }
 
@@ -199,7 +233,6 @@ export async function markWakeUpAttemptFailed(wakeupId: string, reason: string) 
     .where(eq(wakeups.id, wakeupId))
     .returning();
 
-  await cleanupWakeUpAudio(wakeup.id, wakeup.audioBlobUrl);
   return updated;
 }
 
@@ -240,5 +273,7 @@ export async function updateAttemptFromStatus(input: {
     if (wakeup?.status === "calling") {
       await markWakeUpAttemptFailed(input.wakeupId, "no_confirmation");
     }
+
+    await maybeCleanupWakeUpAudio(input.wakeupId);
   }
 }

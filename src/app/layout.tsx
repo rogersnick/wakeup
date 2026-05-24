@@ -12,8 +12,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Wake Up Call",
-  description: "AI voice wake-up calls that actually get you out of bed.",
+  title: "RiseCall",
+  description: "Personal wake-up calls that help you start on time.",
 };
 
 export default function RootLayout({
