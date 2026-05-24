@@ -36,7 +36,7 @@ function AuthCta({ signedOutLabel, signedInLabel }: {
 }
 
 const taglines = [
-  {a: "Wake", b: "Up", c: "Nick." }
+  {a: "Wake", b: "Up" }
 ];
 
 export default function Home() {
@@ -63,8 +63,7 @@ export default function Home() {
 
             <h1 className="max-w-5xl font-serif text-[clamp(4.5rem,16vw,10rem)] font-semibold leading-none tracking-tighter">
               {tagline.a}
-              <span className="block italic">{tagline.b}</span>
-              {tagline.c}
+              <span className="block italic -mt-[0.1em]">{tagline.b}</span>
             </h1>
 
             <p className="mt-10 max-w-2xl text-xl leading-relaxed text-muted-foreground sm:text-2xl">

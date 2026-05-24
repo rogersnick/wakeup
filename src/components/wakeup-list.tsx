@@ -7,10 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardDescription,
   CardEyebrow,
   CardPanel,
-  CardTitle,
 } from "@/components/ui/card";
 import { formatWakeupMessage, type WakeupDisplay } from "@/lib/wakeup/display";
 
@@ -329,11 +327,7 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
   return (
     <Card className="p-8" variant="default">
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <CardEyebrow>Wake-ups</CardEyebrow>
-          <CardTitle className="mt-2 text-2xl">Your wake-ups</CardTitle>
-          <CardDescription>Scheduled calls and their current status.</CardDescription>
-        </div>
+        <div />
         <Button
           type="button"
           variant="ghost"

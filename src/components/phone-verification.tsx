@@ -94,7 +94,7 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
       <CardEyebrow>Step 1</CardEyebrow>
       <CardTitle className="mt-2 text-2xl">Verify your phone</CardTitle>
       <CardDescription>
-        Enter your US mobile number and we'll text you a code.
+        Enter your mobile number and we'll text you a code.
       </CardDescription>
 
       <div className="mt-6 grid gap-4">
