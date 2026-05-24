@@ -1,8 +1,8 @@
-# RiseCall
+# FirstCall
 
-**Personal wake-up calls that help you start on time.**
+**A personal wake-up call at the exact minute you choose.**
 
-RiseCall schedules AI-voiced phone calls to your verified number. Pick a custom script or get a weather-aware morning brief, choose an ElevenLabs voice, and Twilio dials you at the exact time you chose. Press **1** to confirm you're awake, or **2** to snooze.
+FirstCall schedules AI-voiced phone calls to your verified number. Pick a custom script or get a weather-aware morning brief, choose an ElevenLabs voice, and Twilio dials you at the exact time you chose. Press **1** to confirm you're awake, or **2** to snooze.
 
 ## How it works
 

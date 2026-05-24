@@ -1,7 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
-import { SiteHeader } from "@/components/site-header";
+import { JetBrains_Mono, Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 
@@ -17,9 +16,15 @@ const jakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "700"],
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "RiseCall",
-  description: "Personal wake-up calls that help you start on time.",
+  title: "AlarmCall",
+  description: "A personal wake-up call at the exact minute you choose.",
 };
 
 export default function RootLayout({
@@ -31,10 +36,9 @@ export default function RootLayout({
     <ClerkProvider appearance={clerkAppearance}>
       <html
         lang="en"
-        className={`${outfit.variable} ${jakarta.variable} h-full antialiased`}
+        className={`${outfit.variable} ${jakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
       >
         <body className="min-h-full bg-background text-foreground">
-          <SiteHeader />
           {children}
         </body>
       </html>

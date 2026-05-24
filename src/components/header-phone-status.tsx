@@ -79,13 +79,22 @@ export function HeaderPhoneStatus() {
     return null;
   }
 
+  function formatPhoneRedacted(e164: string): string {
+    const us = e164.match(/^\+1(\d{3})(\d{3})(\d{4})$/);
+    if (us) return `+1 (${us[1]}) ···-····`;
+    if (e164.length >= 5) return `${e164.slice(0, 4)} ···-····`;
+    return e164;
+  }
+
   return (
     <HeaderDropdown
       trigger={(open) => (
         <>
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span className="hidden max-w-[8rem] truncate md:inline">{phone}</span>
-          <span className="md:hidden">Verified</span>
+          <span className="hidden max-w-[10rem] truncate font-mono text-xs font-medium uppercase tracking-widest md:inline">
+            {formatPhoneRedacted(phone)}
+          </span>
+          <span className="font-mono text-xs font-medium uppercase tracking-widest md:hidden">Verified</span>
           <ChevronDown
             className={[
               "h-3.5 w-3.5 shrink-0 opacity-60 transition-transform duration-200",

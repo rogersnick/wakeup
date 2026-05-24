@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { NextWakeupPreview } from "@/components/next-wakeup-preview";
 import { PhoneVerification } from "@/components/phone-verification";
 import { ScheduleForm } from "@/components/schedule-form";
-import { WakeupList } from "@/components/wakeup-list";
-import { Card } from "@/components/ui/card";
+import { Card, CardEyebrow } from "@/components/ui/card";
 import { PROFILE_UPDATED_EVENT } from "@/lib/profile-events";
 import {
   getNextActiveWakeup,
@@ -25,7 +24,8 @@ type MeResponse = {
 function DashboardLoading() {
   return (
     <Card className="p-8">
-      <p className="text-sm font-medium text-muted-foreground">
+      <CardEyebrow>Dashboard</CardEyebrow>
+      <p className="mt-2 text-sm font-medium text-muted-foreground">
         Loading your dashboard...
       </p>
     </Card>
@@ -105,17 +105,21 @@ export default function DashboardPage() {
       <div className="mx-auto grid max-w-5xl gap-8 px-6 py-10">
         <div>
           <p className="font-sans text-xs font-bold uppercase tracking-widest text-primary">
-            Dashboard
+            {loading
+              ? "Loading account"
+              : phoneVerified
+                ? "Next call + quick schedule"
+                : "Phone verification required"}
           </p>
           <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-            Your wake-ups
+            Dashboard
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
             {loading
               ? "Loading your wake-up settings..."
               : phoneVerified
-                ? "See what's coming up and manage the mornings you have lined up."
-                : "Confirm your number, choose when we should call, and keep track of the mornings you have lined up."}
+                ? "See what's coming up next or schedule a new wake-up call."
+                : "Confirm your number, then choose when we should call."}
           </p>
         </div>
 
@@ -149,7 +153,6 @@ export default function DashboardPage() {
               />
             )}
 
-            <WakeupList refreshKey={refreshKey} />
           </>
         )}
       </div>

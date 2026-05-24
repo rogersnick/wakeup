@@ -1,73 +1,71 @@
 @import "tailwindcss";
 
-/* ─── Dark-mode design tokens (always-on) ─────────────────────────── */
+/* Minimalist monochrome design tokens */
 :root {
-  --background:           #0f0e17;
-  --foreground:           #f1f5f9;
-  --muted:                #1a1827;
-  --muted-foreground:     #94a3b8;
-
-  /* Violet — primary brand */
-  --primary:              #a78bfa;
-  --primary-foreground:   #0f0e17;
-  --primary-shadow:       #4c1d95;
-
-  /* Pink — playful pop */
-  --secondary:            #f9a8d4;
-  --secondary-foreground: #0f0e17;
-  --secondary-shadow:     #9d174d;
-
-  /* Amber/Yellow — optimism */
-  --accent:               #fde68a;
-  --accent-foreground:    #0f0e17;
-  --accent-shadow:        #92400e;
-
-  /* Emerald/Mint — freshness */
-  --quaternary:           #6ee7b7;
-  --quaternary-foreground: #0f0e17;
-  --quaternary-shadow:    #064e3b;
-
-  --border:               #2d2a3e;
-  --card:                 #1a1827;
-  --ring:                 #a78bfa;
+  --background: #000000;
+  --foreground: #ffffff;
+  --muted: #0a0a0a;
+  --muted-foreground: #a3a3a3;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --accent: #ffffff;
+  --accent-foreground: #000000;
+  --quaternary: #ffffff;
+  --quaternary-foreground: #000000;
+  --border: #ffffff;
+  --border-light: #262626;
+  --card: #000000;
+  --card-foreground: #ffffff;
+  --ring: #ffffff;
 }
 
-/* ─── Tailwind v4 theme mapping ───────────────────────────────────── */
 @theme inline {
-  --color-background:           var(--background);
-  --color-foreground:           var(--foreground);
-  --color-muted:                var(--muted);
-  --color-muted-foreground:     var(--muted-foreground);
-  --color-primary:              var(--primary);
-  --color-primary-foreground:   var(--primary-foreground);
-  --color-secondary:            var(--secondary);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-accent:               var(--accent);
-  --color-accent-foreground:    var(--accent-foreground);
-  --color-quaternary:           var(--quaternary);
-  --color-border:               var(--border);
-  --color-card:                 var(--card);
-  --color-ring:                 var(--ring);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-quaternary: var(--quaternary);
+  --color-border: var(--border);
+  --color-border-light: var(--border-light);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-ring: var(--ring);
 
-  /* Fonts */
-  --font-sans:  var(--font-outfit);
-  --font-body:  var(--font-jakarta, var(--font-outfit));
+  --font-sans: var(--font-outfit);
+  --font-serif: var(--font-outfit);
+  --font-body: var(--font-jakarta, var(--font-outfit));
+  --font-mono: var(--font-mono);
 
-  /* Radius scale */
-  --radius-sm:   8px;
-  --radius-md:   16px;
-  --radius-lg:   24px;
-  --radius-full: 9999px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-full: 0px;
 }
 
-/* ─── Base ─────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-jakarta, var(--font-outfit)), system-ui, sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-outfit), system-ui, sans-serif;
 }
 
@@ -82,40 +80,94 @@ textarea::placeholder {
   color: var(--muted-foreground);
 }
 
+::selection {
+  background: var(--foreground);
+  color: var(--background);
+}
+
 :focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
 }
 
-/* ─── Animations ───────────────────────────────────────────────────── */
-@keyframes wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  25%       { transform: rotate(3deg); }
-  75%       { transform: rotate(-3deg); }
+.texture-paper {
+  position: relative;
 }
 
-@keyframes pop-in {
-  from { transform: scale(0.8); opacity: 0; }
-  70%  { transform: scale(1.05); opacity: 1; }
-  to   { transform: scale(1); opacity: 1; }
+.texture-paper::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.02;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-10px); }
+.texture-lines {
+  position: relative;
 }
 
-@keyframes spin-slow {
-  to { transform: rotate(360deg); }
+.texture-lines::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    #fff 1px,
+    #fff 2px
+  );
+  background-size: 100% 4px;
+  opacity: 0.015;
 }
 
-/* ─── Reduced motion ───────────────────────────────────────────────── */
+.texture-grid {
+  background-image:
+    linear-gradient(#ffffff14 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff14 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.texture-diagonal {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 40px,
+    #ffffff14 40px,
+    #ffffff14 42px
+  );
+}
+
+.texture-inverted-lines {
+  position: relative;
+}
+
+.texture-inverted-lines::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 1px,
+    #000 1px,
+    #000 2px
+  );
+  background-size: 4px 100%;
+  opacity: 0.03;
+}
+
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
 }

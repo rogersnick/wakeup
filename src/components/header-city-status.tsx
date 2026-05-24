@@ -74,7 +74,7 @@ export function HeaderCityStatus() {
       trigger={(open) => (
         <>
           <MapPin className="h-4 w-4 shrink-0 text-primary" />
-          <span className="hidden max-w-[9rem] truncate sm:inline text-foreground">
+          <span className="hidden max-w-[9rem] truncate font-mono text-xs font-medium uppercase tracking-widest sm:inline">
             {cityLabel}
           </span>
           <ChevronDown

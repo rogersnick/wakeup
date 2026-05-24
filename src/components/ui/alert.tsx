@@ -8,8 +8,8 @@ type AlertProps = HTMLAttributes<HTMLParagraphElement> & {
 };
 
 const variantClasses: Record<AlertVariant, string> = {
-  success: "text-quaternary",
-  error:   "text-red-400",
+  success: "text-foreground",
+  error:   "text-foreground",
   info:    "text-muted-foreground",
 };
 

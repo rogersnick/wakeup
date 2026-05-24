@@ -8,7 +8,6 @@ export type GenerateSurpriseScriptInput = {
   city: string;
   weather: WeatherSnapshot | null;
   timezone: string;
-  toneHint?: string | null;
   firstName?: string | null;
 };
 
@@ -39,10 +38,6 @@ export async function generateSurpriseScript(
     const weatherLine = input.weather
       ? `Current weather in ${input.weather.cityLabel}: ${input.weather.tempC}°C and ${input.weather.description}.`
       : `Location: ${input.city}. Weather is unavailable — do not invent specific weather details.`;
-
-    const toneLine = input.toneHint?.trim()
-      ? `Tone preference: ${input.toneHint.trim()}.`
-      : "Tone preference: warm and motivating.";
 
     const nameLine = input.firstName?.trim()
       ? `Address the user as ${input.firstName.trim()} at the start of the script.`
@@ -77,7 +72,7 @@ export async function generateSurpriseScript(
             content: [
               `Write a wake-up call script for someone in timezone ${input.timezone}.`,
               weatherLine,
-              toneLine,
+              "Tone preference: warm and motivating.",
               nameLine,
             ].join("\n"),
           },

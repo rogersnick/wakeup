@@ -2,10 +2,11 @@
 
 import { AlarmClock } from "lucide-react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { CityInput } from "@/components/city-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardEyebrow, CardPanel } from "@/components/ui/card";
 import { formatTimeLabel } from "@/components/ui/time-picker";
 import { REQUEST_CITY_CHANGE_EVENT } from "@/lib/profile-events";
 import {
@@ -65,15 +66,13 @@ export function NextWakeupPreview({
   );
 
   return (
-    <Card className="overflow-hidden p-0">
-      <div className="bg-primary px-8 py-8 text-primary-foreground">
-        <p className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">
-          Up next
-        </p>
+    <Card className="overflow-hidden p-0" variant="primary">
+      <div className="border-b-2 border-primary bg-foreground px-8 py-8 text-background">
+        <CardEyebrow>Up next</CardEyebrow>
         <h2 className="mt-2 font-sans text-3xl font-extrabold tracking-tight sm:text-4xl">
           Your next wake-up
         </h2>
-        <p className="mt-2 max-w-xl text-base text-primary-foreground/70">
+        <p className="mt-2 max-w-xl text-base opacity-70">
           {scheduleSummary}
           {timezone ? ` · ${timezone}` : ""}
         </p>
@@ -82,7 +81,7 @@ export function NextWakeupPreview({
       <div className="grid gap-6 p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 border-2 border-accent/40">
+            <div className="flex h-16 w-16 items-center justify-center border-2 border-foreground bg-accent/20">
               <AlarmClock className="h-8 w-8 text-accent" strokeWidth={2.25} />
             </div>
             <div>
@@ -100,15 +99,30 @@ export function NextWakeupPreview({
               </p>
             </div>
           </div>
-          <Badge variant={wakeup.status === "calling" ? "accent" : "primary"}>
-            {wakeup.status}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge variant={wakeup.status === "calling" ? "accent" : "primary"}>
+              {wakeup.status}
+            </Badge>
+            <div className="flex gap-2">
+              <div className="flex items-center gap-2 border-2 border-foreground bg-foreground px-3 py-1.5 text-background">
+                <span className="font-mono text-base font-extrabold leading-none">1</span>
+                <span className="font-mono text-xs font-bold uppercase tracking-widest">I&apos;m awake</span>
+              </div>
+              <div className="flex items-center gap-2 border-2 border-foreground px-3 py-1.5">
+                <span className="font-mono text-base font-extrabold leading-none">2</span>
+                <span className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">+5 min</span>
+              </div>
+            </div>
+            {wakeup.snoozeCount > 0 ? (
+              <p className="font-mono text-xs text-muted-foreground">
+                Snoozed {wakeup.snoozeCount}× today
+              </p>
+            ) : null}
+          </div>
         </div>
 
-        <div className="rounded-lg bg-primary/10 border-2 border-primary/20 p-6">
-          <p className="text-sm font-semibold uppercase tracking-wider text-primary">
-            What you&apos;ll hear
-          </p>
+        <CardPanel variant="primary">
+          <CardEyebrow className="text-primary">What you&apos;ll hear</CardEyebrow>
           {isWeatherReport && (!hasValidWeatherCity || showCityEditor) ? (
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">
@@ -130,33 +144,31 @@ export function NextWakeupPreview({
           ) : isWeatherReport && !wakeup.resolvedScriptText ? (
             <>
               <p className="mt-3 text-lg leading-8 text-foreground">{message}</p>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Tone: {wakeup.scriptText}
-              </p>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="mt-3"
+                className="mt-3 border-foreground bg-foreground text-background hover:bg-foreground hover:text-orange-500"
                 onClick={() => setShowCityEditor(true)}
               >
                 Change city
               </Button>
             </>
           ) : (
-            <p className="mt-3 text-lg leading-8 text-foreground">
+            <p className="text-lg leading-8 text-foreground">
               &ldquo;{message}&rdquo;
             </p>
           )}
-        </div>
+        </CardPanel>
 
-        <p className="text-sm text-muted-foreground">
-          Press 1 when you answer to confirm you&apos;re awake, or press 2 to
-          snooze for 5 minutes.
-          {wakeup.snoozeCount > 0 ? (
-            <> Snoozed {wakeup.snoozeCount} time{wakeup.snoozeCount === 1 ? "" : "s"} today.</>
-          ) : null}{" "}
-          Cancel below if you need to change your schedule.
+        <p className="text-xs text-muted-foreground">
+          Need to cancel?{" "}
+          <Link
+            href="/dashboard/wakeups"
+            className="font-semibold text-foreground underline-offset-4 hover:underline hover:text-red-500"
+          >
+            Manage in Wake-ups →
+          </Link>
         </p>
       </div>
     </Card>

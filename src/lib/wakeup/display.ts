@@ -83,7 +83,7 @@ export function formatWakeupMessage(
     }
     const city = userCity?.trim();
     return city
-      ? `Weather report for ${city}.`
+      ? `Real-time Weather report for ${city}.`
       : "Weather report — set your city to include local conditions.";
   }
 

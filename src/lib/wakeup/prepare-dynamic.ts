@@ -22,7 +22,6 @@ export async function prepareDynamicWakeUpAudio(
     city: user.city,
     weather,
     timezone: user.timezone,
-    toneHint: wakeup.scriptText.trim() || null,
     firstName: user.displayName,
   });
 

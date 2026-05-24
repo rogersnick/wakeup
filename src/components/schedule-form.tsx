@@ -5,13 +5,21 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
+  Search,
   Sparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CityInput } from "@/components/city-input";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardEyebrow,
+  CardPanel,
+  CardTitle,
+  SelectableCard,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { TimePicker, formatTimeLabel } from "@/components/ui/time-picker";
@@ -32,14 +40,9 @@ const MESSAGE_PRESETS = [
   { label: "Direct", text: "Hey — time to get up. No snoozing today." },
 ] as const;
 
-const TONE_PRESETS = [
-  { label: "Gentle", text: "gentle and calm" },
-  { label: "Pep talk", text: "motivational pep talk" },
-  { label: "Funny", text: "light and funny" },
-] as const;
-
 const STEPS = [
   { id: "when", label: "When" },
+  { id: "voice", label: "Voice" },
   { id: "message", label: "Message" },
   { id: "confirm", label: "Confirm" },
 ] as const;
@@ -147,6 +150,172 @@ function StepIndicator({ currentStep }: { currentStep: StepId }) {
   );
 }
 
+function VoiceCard({
+  voice,
+  selected,
+  scriptMode,
+  previewLoading,
+  previewReady,
+  previewAudioUrl,
+  previewDisabled,
+  onSelect,
+  onPreview,
+  onConfirm,
+}: {
+  voice: Voice;
+  selected: boolean;
+  scriptMode: "static" | "dynamic";
+  previewLoading: boolean;
+  previewReady: boolean;
+  previewAudioUrl: string | null;
+  previewDisabled: boolean;
+  onSelect: () => void;
+  onPreview: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <SelectableCard selected={selected}>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={selected}
+        onClick={onSelect}
+        className="grid min-h-24 gap-3 text-left focus-visible:outline-[3px] focus-visible:outline-offset-3"
+      >
+        <span className="flex items-start justify-between gap-4">
+          <span>
+            <CardEyebrow>Voice</CardEyebrow>
+            <span className="mt-2 block text-2xl font-semibold tracking-tight">
+              {voice.name}
+            </span>
+          </span>
+          <span
+            aria-hidden
+            className={cn(
+              "mt-1 flex h-7 w-7 shrink-0 items-center justify-center border text-xs font-bold",
+              selected ? "border-background" : "border-foreground",
+            )}
+          >
+            {selected ? "ON" : ""}
+          </span>
+        </span>
+
+        {voice.description ? (
+          <span className="block text-sm leading-6 opacity-70">
+            {voice.description}
+          </span>
+        ) : null}
+      </button>
+
+      {scriptMode === "static" ? (
+        <Button
+          type="button"
+          variant={selected ? "secondary" : "outline"}
+          size="sm"
+          onClick={onPreview}
+          disabled={previewDisabled}
+          className={cn(
+            "w-full gap-2 rounded-none border-2 shadow-none transition-colors duration-100 ease-linear",
+            "hover:translate-x-0 hover:translate-y-0 hover:shadow-none",
+            "active:translate-x-0 active:translate-y-0 active:shadow-none",
+            "focus-visible:ring-0 focus-visible:outline-[3px] focus-visible:outline-offset-2",
+            selected
+              ? "border-background text-foreground hover:border-background hover:bg-background hover:text-[#ff6a00] focus-visible:outline-background"
+              : "border-foreground text-foreground hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline-foreground",
+          )}
+        >
+          {previewLoading ? "Generating..." : "Preview"}
+          {!previewLoading ? <Play className="h-4 w-4" /> : null}
+        </Button>
+      ) : null}
+
+      {previewReady && previewAudioUrl ? (
+        <audio
+          key={previewAudioUrl}
+          src={previewAudioUrl}
+          controls
+          autoPlay
+          className="w-full"
+        >
+          <track kind="captions" />
+        </audio>
+      ) : null}
+
+      {selected ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onConfirm}
+          className={cn(
+            "w-full rounded-none border-2 shadow-none transition-colors duration-100 ease-linear",
+            "hover:translate-x-0 hover:translate-y-0 hover:shadow-none",
+            "active:translate-x-0 active:translate-y-0 active:shadow-none",
+            "focus-visible:ring-0 focus-visible:outline-[3px] focus-visible:outline-offset-2",
+            "border-background text-foreground hover:border-background hover:bg-background hover:text-[#ff6a00] focus-visible:outline-background",
+          )}
+        >
+          Select
+        </Button>
+      ) : null}
+    </SelectableCard>
+  );
+}
+
+function MessagePreviewPanel({
+  selectedVoiceName,
+  loading,
+  disabled,
+  audioUrl,
+  scriptText,
+  onPreview,
+  onVoiceClick,
+}: {
+  selectedVoiceName: string;
+  loading: boolean;
+  disabled: boolean;
+  audioUrl: string | null;
+  scriptText?: string | null;
+  onPreview: () => void;
+  onVoiceClick: () => void;
+}) {
+  return (
+    <div className="grid gap-3 border-2 border-border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Voice:{" "}
+          <button
+            type="button"
+            onClick={onVoiceClick}
+            className="font-medium text-foreground underline-offset-4 hover:underline hover:text-orange-500 transition-colors duration-100"
+          >
+            {selectedVoiceName}
+          </button>
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onPreview}
+          disabled={disabled || loading}
+          className="gap-2"
+        >
+          {loading ? "Generating..." : "Preview"}
+          {!loading ? <Play className="h-4 w-4" /> : null}
+        </Button>
+      </div>
+      {scriptText ? (
+        <p className="text-sm leading-6 text-foreground">&ldquo;{scriptText}&rdquo;</p>
+      ) : null}
+      {audioUrl ? (
+        <audio key={audioUrl} src={audioUrl} controls autoPlay className="w-full">
+          <track kind="captions" />
+        </audio>
+      ) : null}
+    </div>
+  );
+}
+
 export function ScheduleForm({
   disabled,
   userCity,
@@ -164,14 +333,16 @@ export function ScheduleForm({
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [scriptMode, setScriptMode] = useState<"static" | "dynamic">("static");
   const [scriptText, setScriptText] = useState<string>(MESSAGE_PRESETS[0].text);
-  const [toneHint, setToneHint] = useState<string>(TONE_PRESETS[0].text);
   const [voices, setVoices] = useState<Voice[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState("");
+  const [voiceSearch, setVoiceSearch] = useState("");
   const [voicesLoading, setVoicesLoading] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [previewLoadingVoiceId, setPreviewLoadingVoiceId] = useState<string | null>(null);
+  const [messagePreviewLoading, setMessagePreviewLoading] = useState(false);
   const [previewVoiceId, setPreviewVoiceId] = useState<string | null>(null);
   const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
+  const [previewScriptText, setPreviewScriptText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -189,6 +360,19 @@ export function ScheduleForm({
     type === "recurring" ? days : null,
   );
   const selectedVoice = voices.find((voice) => voice.voiceId === selectedVoiceId);
+  const filteredVoices = useMemo(() => {
+    const query = voiceSearch.trim().toLowerCase();
+
+    if (!query) {
+      return voices;
+    }
+
+    return voices.filter((voice) =>
+      [voice.name, voice.description]
+        .filter(Boolean)
+        .some((value) => value?.toLowerCase().includes(query)),
+    );
+  }, [voiceSearch, voices]);
 
   useEffect(() => {
     if (disabled) {
@@ -313,8 +497,17 @@ export function ScheduleForm({
     return scriptText.trim().length > 0;
   }
 
+  function clearPreview() {
+    setPreviewVoiceId(null);
+    setPreviewAudioUrl(null);
+    setPreviewScriptText(null);
+  }
+
   function goNext() {
     if (step === "when" && canAdvanceFromWhen()) {
+      setStep("message");
+    } else if (step === "voice") {
+      clearPreview();
       setStep("message");
     } else if (step === "message" && canAdvanceFromMessage()) {
       setStep("confirm");
@@ -324,8 +517,65 @@ export function ScheduleForm({
   function goBack() {
     if (step === "message") {
       setStep("when");
+    } else if (step === "voice") {
+      setStep("message");
     } else if (step === "confirm") {
       setStep("message");
+    }
+  }
+
+  async function playMessagePreview() {
+    if (!selectedVoiceId) {
+      return;
+    }
+
+    if (scriptMode === "static" && scriptText.trim().length === 0) {
+      return;
+    }
+
+    if (scriptMode === "dynamic" && !hasValidWeatherCity) {
+      return;
+    }
+
+    setMessagePreviewLoading(true);
+    clearPreview();
+    setError(null);
+
+    try {
+      const response = await fetch(
+        scriptMode === "dynamic" ? "/api/voices/preview-dynamic" : "/api/voices/preview",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            scriptMode === "dynamic"
+              ? { voiceId: selectedVoiceId }
+              : { scriptText, voiceId: selectedVoiceId },
+          ),
+        },
+      );
+
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error ?? "Failed to generate preview");
+      }
+
+      if (scriptMode === "dynamic") {
+        const scriptHeader = response.headers.get("X-Wakeup-Script");
+        if (scriptHeader) {
+          setPreviewScriptText(decodeURIComponent(scriptHeader));
+        }
+      } else {
+        setPreviewScriptText(scriptText.trim());
+      }
+
+      const audioBlob = await response.blob();
+      setPreviewVoiceId(selectedVoiceId);
+      setPreviewAudioUrl(URL.createObjectURL(audioBlob));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate preview");
+    } finally {
+      setMessagePreviewLoading(false);
     }
   }
 
@@ -379,7 +629,7 @@ export function ScheduleForm({
           scheduledDate: type === "one_shot" ? scheduledDate : null,
           scheduledTimeLocal,
           recurrence: type === "recurring" ? { days } : null,
-          scriptText: scriptMode === "dynamic" ? toneHint : scriptText,
+          scriptText: scriptMode === "dynamic" ? "" : scriptText,
           scriptMode,
           voiceId: selectedVoiceId || undefined,
           timezone,
@@ -402,8 +652,9 @@ export function ScheduleForm({
 
   if (disabled) {
     return (
-      <Card className="p-8 opacity-60">
-        <CardTitle>Verify your phone first</CardTitle>
+      <Card className="p-8 opacity-60" variant="muted">
+        <CardEyebrow>Schedule</CardEyebrow>
+        <CardTitle className="mt-2 text-2xl">Verify your phone first</CardTitle>
         <CardDescription className="mt-2">
           Once your number is confirmed, you can schedule your first wake-up call.
         </CardDescription>
@@ -416,32 +667,53 @@ export function ScheduleForm({
       ? "When should we call?"
       : step === "message"
         ? "What should we say?"
-        : "Review and schedule";
+        : step === "voice"
+          ? "Who should call?"
+          : "Review and schedule";
 
   const stepDescription =
     step === "when"
       ? "Choose your schedule and wake-up time."
       : step === "message"
-        ? "Pick a message style and voice."
-        : "Make sure everything looks right.";
+        ? "Choose the message we will deliver."
+        : step === "voice"
+          ? scriptMode === "dynamic"
+            ? "Choose who delivers your weather report."
+            : "Search and choose a voice. You can edit the message next."
+          : "Make sure everything looks right.";
 
   return (
-    <Card className="overflow-hidden p-0">
-      <div className="border-b border-border px-8 py-6">
+    <Card className="p-0" variant="primary">
+      <div className="border-b-2 border-border px-8 py-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <StepIndicator currentStep={step} />
             <CardTitle className="mt-3 text-2xl sm:text-3xl">{stepTitle}</CardTitle>
             <CardDescription className="mt-1 text-base">{stepDescription}</CardDescription>
           </div>
-          <p className="text-3xl font-extrabold tracking-tight text-primary sm:text-4xl">
-            {formatTimeLabel(scheduledTimeLocal)}
-          </p>
+          <div className="flex flex-col items-end gap-3">
+            <p className="text-3xl font-extrabold tracking-tight text-primary sm:text-4xl">
+              {formatTimeLabel(scheduledTimeLocal)}
+            </p>
+            {step === "message" &&
+            ((scriptMode === "static" && scriptText.trim().length > 0) ||
+              (scriptMode === "dynamic" && hasValidWeatherCity && !showCityEditor)) ? (
+              <MessagePreviewPanel
+                selectedVoiceName={selectedVoice?.name ?? "Default voice"}
+                loading={messagePreviewLoading}
+                disabled={!selectedVoiceId}
+                audioUrl={previewAudioUrl}
+                scriptText={previewScriptText}
+                onPreview={() => void playMessagePreview()}
+                onVoiceClick={() => setStep("voice")}
+              />
+            ) : null}
+          </div>
         </div>
       </div>
 
       <div className="px-8 py-8">
-        <div className="mx-auto max-w-4xl">
+        <div className={cn("mx-auto", step === "voice" ? "max-w-6xl" : "max-w-4xl")}>
           {step === "when" ? (
             <div className="grid gap-8">
               <Section title="Schedule">
@@ -465,7 +737,7 @@ export function ScheduleForm({
                         value={scheduledDate}
                         min={format(new Date(), "yyyy-MM-dd")}
                         onChange={(event) => setScheduledDate(event.target.value)}
-                        className="w-full min-w-[12rem] sm:w-auto"
+                        className="w-full min-w-48 sm:w-auto"
                         required
                       />
                     </div>
@@ -487,7 +759,7 @@ export function ScheduleForm({
                         "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                         scheduledTimeLocal === time && !customTime
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-foreground hover:bg-border",
+                          : "bg-muted text-foreground hover:bg-border hover:text-[#ff6a00]",
                       )}
                     >
                       {formatTimeLabel(time)}
@@ -505,7 +777,7 @@ export function ScheduleForm({
                       "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                       customTime
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground hover:bg-border",
+                        : "bg-muted text-foreground hover:bg-border hover:text-[#ff6a00]",
                     )}
                   >
                     {customTime ? formatTimeLabel(scheduledTimeLocal) : "Custom"}
@@ -514,7 +786,7 @@ export function ScheduleForm({
                     <button
                       type="button"
                       onClick={scheduleInFiveMinutes}
-                      className="rounded-md bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-border"
+                      className="rounded-md bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-border hover:text-[#ff6a00]"
                     >
                       In 5 min
                     </button>
@@ -544,7 +816,7 @@ export function ScheduleForm({
                         key={label}
                         type="button"
                         onClick={action}
-                        className="rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-border hover:text-foreground"
+                        className="rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-border hover:text-[#ff6a00]"
                       >
                         {label}
                       </button>
@@ -564,7 +836,7 @@ export function ScheduleForm({
                             "flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-colors",
                             selected
                               ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-border hover:text-foreground",
+                              : "bg-muted text-muted-foreground hover:bg-border hover:text-[#ff6a00]",
                           )}
                         >
                           {label}
@@ -584,8 +856,7 @@ export function ScheduleForm({
                   value={scriptMode}
                   onChange={(mode) => {
                     setScriptMode(mode);
-                    setPreviewVoiceId(null);
-                    setPreviewAudioUrl(null);
+                    clearPreview();
                     if (mode === "dynamic" && !hasValidWeatherCity) {
                       setShowCityEditor(true);
                     }
@@ -606,14 +877,13 @@ export function ScheduleForm({
                         type="button"
                         onClick={() => {
                           setScriptText(preset.text);
-                          setPreviewVoiceId(null);
-                          setPreviewAudioUrl(null);
+                          clearPreview();
                         }}
                         className={cn(
                           "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                           scriptText === preset.text
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-border hover:text-foreground",
+                            : "bg-muted text-muted-foreground hover:bg-border hover:text-[#ff6a00]",
                         )}
                       >
                         {preset.label}
@@ -626,8 +896,7 @@ export function ScheduleForm({
                     maxLength={500}
                     onChange={(event) => {
                       setScriptText(event.target.value);
-                      setPreviewVoiceId(null);
-                      setPreviewAudioUrl(null);
+                      clearPreview();
                     }}
                     required
                   />
@@ -671,28 +940,13 @@ export function ScheduleForm({
                     </div>
                   )}
 
-                  {hasValidWeatherCity && !showCityEditor ? (
-                    <div className="flex flex-wrap gap-2">
-                      {TONE_PRESETS.map((preset) => (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onClick={() => setToneHint(preset.text)}
-                          className={cn(
-                            "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                            toneHint === preset.text
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-border hover:text-foreground",
-                          )}
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
                 </Section>
               )}
+            </div>
+          ) : null}
 
+          {step === "voice" ? (
+            <div className="grid gap-8">
               <Section
                 title="Voice"
                 description={
@@ -701,6 +955,32 @@ export function ScheduleForm({
                     : "Choose a voice and preview your script."
                 }
               >
+                <div className="grid gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-border px-4 py-3">
+                    <CardEyebrow className="shrink-0">Selected voice</CardEyebrow>
+                    <p className="text-base font-semibold text-foreground">
+                      {selectedVoice?.name ?? "Default voice"}
+                    </p>
+                  </div>
+                  <label className="grid gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      Search voices
+                    </span>
+                    <span className="relative">
+                      <Search
+                        aria-hidden
+                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                      />
+                      <Input
+                        value={voiceSearch}
+                        onChange={(event) => setVoiceSearch(event.target.value)}
+                        placeholder="Try calm, bright, deep..."
+                        className="pl-10"
+                      />
+                    </span>
+                  </label>
+                </div>
+
                 {voicesLoading ? (
                   <p className="text-sm text-muted-foreground">Loading voices...</p>
                 ) : null}
@@ -708,65 +988,48 @@ export function ScheduleForm({
                 {voiceError ? <Alert variant="error">{voiceError}</Alert> : null}
 
                 {!voicesLoading && voices.length > 0 ? (
-                  <div className="grid gap-3">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <select
-                        value={selectedVoiceId}
-                        onChange={(event) => {
-                          setSelectedVoiceId(event.target.value);
-                          setPreviewVoiceId(null);
-                          setPreviewAudioUrl(null);
-                        }}
-                        className="h-11 w-full rounded-md border-2 border-border bg-muted px-4 text-sm font-medium text-foreground sm:max-w-sm"
-                      >
-                        {voices.map((voice) => (
-                          <option key={voice.voiceId} value={voice.voiceId}>
-                            {voice.name}
-                          </option>
-                        ))}
-                      </select>
+                  <>
+                    <div
+                      role="radiogroup"
+                      aria-label="Wake-up voice"
+                      className="grid max-h-136 gap-4 overflow-y-auto pr-2 md:grid-cols-2 xl:grid-cols-3"
+                    >
+                      {filteredVoices.map((voice) => {
+                        const selected = selectedVoiceId === voice.voiceId;
+                        const previewLoading = previewLoadingVoiceId === voice.voiceId;
 
-                      {scriptMode === "static" ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => void playPreview(selectedVoiceId)}
-                          disabled={
-                            !selectedVoiceId ||
-                            previewLoadingVoiceId === selectedVoiceId ||
-                            scriptText.trim().length === 0
-                          }
-                          className="gap-2 sm:shrink-0"
-                        >
-                          {previewLoadingVoiceId === selectedVoiceId
-                            ? "Generating..."
-                            : "Preview"}
-                          {previewLoadingVoiceId !== selectedVoiceId ? (
-                            <Play className="h-4 w-4" />
-                          ) : null}
-                        </Button>
-                      ) : null}
+                        return (
+                          <VoiceCard
+                            key={voice.voiceId}
+                            voice={voice}
+                            selected={selected}
+                            scriptMode={scriptMode}
+                            previewLoading={previewLoading}
+                            previewReady={previewVoiceId === voice.voiceId}
+                            previewAudioUrl={previewAudioUrl}
+                            previewDisabled={
+                              previewLoading ||
+                              scriptText.trim().length === 0
+                            }
+                            onSelect={() => {
+                              setSelectedVoiceId(voice.voiceId);
+                              setPreviewVoiceId(null);
+                              setPreviewAudioUrl(null);
+                            }}
+                            onPreview={() => void playPreview(voice.voiceId)}
+                            onConfirm={goNext}
+                          />
+                        );
+                      })}
                     </div>
 
-                    {selectedVoice?.description ? (
-                      <p className="text-sm text-muted-foreground">
-                        {selectedVoice.description}
+                    {filteredVoices.length === 0 ? (
+                      <p className="border-2 border-border p-5 text-sm text-muted-foreground">
+                        No voices match &ldquo;{voiceSearch.trim()}&rdquo;. Try a
+                        different keyword or clear the search.
                       </p>
                     ) : null}
-
-                    {previewVoiceId === selectedVoiceId && previewAudioUrl ? (
-                      <audio
-                        key={previewAudioUrl}
-                        src={previewAudioUrl}
-                        controls
-                        autoPlay
-                        className="w-full"
-                      >
-                        <track kind="captions" />
-                      </audio>
-                    ) : null}
-                  </div>
+                  </>
                 ) : null}
 
                 {!voicesLoading && !voiceError && voices.length === 0 ? (
@@ -780,36 +1043,33 @@ export function ScheduleForm({
 
           {step === "confirm" ? (
             <div className="grid gap-6">
-              <div className="rounded-lg bg-muted p-6">
+              <CardPanel>
                 <dl className="grid gap-4 text-sm">
                   <div>
-                    <dt className="text-muted-foreground">Schedule</dt>
-                    <dd className="mt-1 text-lg font-semibold text-foreground">
+                    <CardEyebrow>Schedule</CardEyebrow>
+                    <dd className="mt-2 text-lg font-semibold text-foreground">
                       {scheduleSummary}
                     </dd>
                     <dd className="text-muted-foreground">{timezone}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Message</dt>
-                    <dd className="mt-1 text-foreground">
+                    <CardEyebrow>Message</CardEyebrow>
+                    <dd className="mt-2 text-foreground">
                       {scriptMode === "dynamic" ? (
-                        <>Weather report for {weatherCityLabel}</>
+                        <>Real-time Weather report for {weatherCityLabel}</>
                       ) : (
                         <>&ldquo;{scriptText}&rdquo;</>
                       )}
                     </dd>
-                    {scriptMode === "dynamic" ? (
-                      <dd className="mt-1 text-muted-foreground">Tone: {toneHint}</dd>
-                    ) : null}
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Voice</dt>
-                    <dd className="mt-1 font-medium text-foreground">
+                    <CardEyebrow>Voice</CardEyebrow>
+                    <dd className="mt-2 font-medium text-foreground">
                       {selectedVoice?.name ?? "Default voice"}
                     </dd>
                   </div>
                 </dl>
-              </div>
+              </CardPanel>
 
               <p className="text-sm text-muted-foreground">
                 Press 1 when you answer to confirm you&apos;re awake.
@@ -817,7 +1077,7 @@ export function ScheduleForm({
             </div>
           ) : null}
 
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t-2 border-border pt-6">
             {step !== "when" ? (
               <Button type="button" variant="ghost" onClick={goBack} className="gap-2">
                 <ChevronLeft className="h-4 w-4" />
@@ -842,7 +1102,13 @@ export function ScheduleForm({
               <Button
                 type="button"
                 size="lg"
-                disabled={step === "when" ? !canAdvanceFromWhen() : !canAdvanceFromMessage()}
+                disabled={
+                  step === "when"
+                    ? !canAdvanceFromWhen()
+                    : step === "message"
+                      ? !canAdvanceFromMessage()
+                      : false
+                }
                 onClick={goNext}
                 className="gap-2"
               >

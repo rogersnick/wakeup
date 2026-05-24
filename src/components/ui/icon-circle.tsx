@@ -13,41 +13,24 @@ type IconCircleProps = {
   variant?: IconCircleVariant;
 };
 
-const variantClasses: Record<IconCircleVariant, { wrap: string; icon: string }> = {
-  primary:    { wrap: "bg-primary/20 border-2 border-primary/50",    icon: "text-primary" },
-  secondary:  { wrap: "bg-secondary/20 border-2 border-secondary/50", icon: "text-secondary" },
-  accent:     { wrap: "bg-accent/20 border-2 border-accent/50",       icon: "text-accent" },
-  quaternary: { wrap: "bg-quaternary/20 border-2 border-quaternary/50", icon: "text-quaternary" },
-  muted:      { wrap: "bg-muted border-2 border-border",               icon: "text-muted-foreground" },
-};
-
 export function IconCircle({
   icon: Icon,
   className,
   iconClassName,
   size = "default",
-  variant = "primary",
 }: IconCircleProps) {
-  const v = variantClasses[variant];
-
   return (
     <div
       className={cn(
-        "flex items-center justify-center rounded-full",
-        "transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-        "group-hover:scale-110 group-hover:rotate-12",
-        size === "default" ? "h-14 w-14" : "h-16 w-16",
-        v.wrap,
+        "flex items-center justify-center border border-foreground bg-background text-foreground",
+        "transition-colors duration-100 group-hover:bg-foreground group-hover:text-background",
+        size === "default" ? "h-12 w-12" : "h-14 w-14",
         className,
       )}
     >
       <Icon
-        className={cn(
-          size === "default" ? "h-7 w-7" : "h-8 w-8",
-          v.icon,
-          iconClassName,
-        )}
-        strokeWidth={2.5}
+        className={cn(size === "default" ? "h-5 w-5" : "h-6 w-6", iconClassName)}
+        strokeWidth={1.5}
       />
     </div>
   );

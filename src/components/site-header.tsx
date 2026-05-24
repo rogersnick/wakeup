@@ -1,36 +1,43 @@
 "use client";
 
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
-import { AlarmClock } from "lucide-react";
+import { PhoneCall } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { HeaderCityStatus } from "@/components/header-city-status";
 import { HeaderPhoneStatus } from "@/components/header-phone-status";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const navLinks = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard/wakeups", label: "Wake-ups" },
+];
 
 export function SiteHeader() {
   const { isSignedIn } = useAuth();
+  const pathname = usePathname();
 
   return (
-    <header className="border-b-2 border-border sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b-4 border-border bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link
           href="/"
-          className="group flex items-center gap-2.5"
-          aria-label="RiseCall home"
+          className="group flex items-center gap-3 focus-visible:outline-3 focus-visible:outline-offset-3"
+          aria-label="AlarmCall home"
         >
           <div
             className={[
-              "flex h-9 w-9 items-center justify-center rounded-xl",
-              "bg-primary border-2 border-[#6d28d9] shadow-[3px_3px_0px_0px_#4c1d95]",
-              "transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-              "group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-[5px_5px_0px_0px_#4c1d95]",
+              "flex h-10 w-10 items-center justify-center border-2 border-foreground",
+              "bg-foreground text-background transition-colors duration-100",
+              "group-hover:bg-background group-hover:text-foreground",
             ].join(" ")}
           >
-            <AlarmClock className="h-4.5 w-4.5 text-primary-foreground" strokeWidth={2.5} />
+            <PhoneCall className="h-5 w-5" strokeWidth={1.5} />
           </div>
-          <span className="font-sans text-lg font-extrabold tracking-tight text-foreground">
-            Rise<span className="text-primary">Call</span>
+          <span className="font-serif text-xl font-semibold tracking-tight text-foreground">
+            AlarmCall
           </span>
         </Link>
 
@@ -44,15 +51,29 @@ export function SiteHeader() {
             <>
               <HeaderCityStatus />
               <HeaderPhoneStatus />
-              <Link
-                href="/dashboard"
-                className={[
-                  "text-sm font-bold uppercase tracking-wider text-muted-foreground",
-                  "transition-colors duration-200 hover:text-primary",
-                ].join(" ")}
-              >
-                Dashboard
-              </Link>
+              <nav className="flex items-center gap-4">
+                {navLinks.map(({ href, label }) => {
+                  const active =
+                    href === "/dashboard"
+                      ? pathname === "/dashboard"
+                      : pathname.startsWith(href);
+
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        "border-b-2 border-transparent font-mono text-xs font-medium uppercase tracking-widest transition-colors duration-100 focus-visible:border-foreground focus-visible:outline-none",
+                        active
+                          ? "border-foreground text-foreground"
+                          : "text-muted-foreground hover:border-foreground hover:text-foreground",
+                      )}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
+              </nav>
               <UserButton />
             </>
           )}
