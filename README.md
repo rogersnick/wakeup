@@ -1,4 +1,4 @@
-# FirstCall
+# AlarmCall
 
 **A personal wake-up call at the exact minute you choose.**
 
