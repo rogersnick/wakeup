@@ -1,7 +1,7 @@
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, isNotNull, ne } from "drizzle-orm";
 import { jsonError, requireUserId } from "@/lib/api";
 import { getDb } from "@/lib/db";
-import { phoneOtps } from "@/lib/db/schema";
+import { phoneOtps, users } from "@/lib/db/schema";
 import {
   generateOtpCode,
   getOtpExpiry,
@@ -27,6 +27,19 @@ export async function POST(request: Request) {
     await getOrCreateUser(authResult.userId, body.timezone);
 
     const db = getDb();
+
+    const phoneTaken = await db.query.users.findFirst({
+      where: and(
+        eq(users.phoneE164, phoneE164),
+        ne(users.id, authResult.userId),
+        isNotNull(users.phoneVerifiedAt),
+      ),
+    });
+
+    if (phoneTaken) {
+      return jsonError("This phone number is already linked to another account.");
+    }
+
     const recent = await db.query.phoneOtps.findFirst({
       where: and(
         eq(phoneOtps.userId, authResult.userId),

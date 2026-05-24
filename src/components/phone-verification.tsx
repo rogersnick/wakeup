@@ -14,29 +14,34 @@ type Props = {
 };
 
 export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
-  const [phone, setPhone] = useState(verifiedPhone ?? "");
+  const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
-  const [sentTo, setSentTo] = useState<string | null>(verifiedPhone ?? null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  if (verifiedPhone) {
-    return (
-      <Card variant="success" className="p-8">
-        <div className="flex items-start gap-4">
-          <IconCircle
-            icon={CheckCircle2}
-            iconClassName="text-secondary"
-            className="shrink-0 bg-emerald-100"
-          />
-          <div>
-            <CardTitle className="text-emerald-900">Phone verified</CardTitle>
-            <CardDescription className="text-emerald-800">{verifiedPhone}</CardDescription>
-          </div>
-        </div>
-      </Card>
-    );
+  async function releasePhone() {
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/phone/release", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to release phone number");
+      }
+      setPhone("");
+      setCode("");
+      setSentTo(null);
+      setMessage("Phone number released. Verify a new number to schedule wake-ups.");
+      onVerified();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to release phone number");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function sendCode() {
@@ -86,6 +91,35 @@ export function PhoneVerification({ verifiedPhone, onVerified }: Props) {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (verifiedPhone) {
+    return (
+      <Card variant="success" className="p-8">
+        <div className="flex items-start gap-4">
+          <IconCircle
+            icon={CheckCircle2}
+            iconClassName="text-secondary"
+            className="shrink-0 bg-emerald-100"
+          />
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-emerald-900">Phone verified</CardTitle>
+            <CardDescription className="text-emerald-800">{verifiedPhone}</CardDescription>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-4 border-emerald-300 text-emerald-900 hover:bg-emerald-100 hover:text-emerald-950"
+              disabled={loading}
+              onClick={releasePhone}
+            >
+              Change phone number
+            </Button>
+          </div>
+        </div>
+        {error ? <Alert variant="error" className="mt-4">{error}</Alert> : null}
+      </Card>
+    );
   }
 
   return (

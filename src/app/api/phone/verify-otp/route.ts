@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
 import { jsonError, requireUserId } from "@/lib/api";
 import { getDb } from "@/lib/db";
 import { phoneOtps, users } from "@/lib/db/schema";
@@ -40,6 +40,18 @@ export async function POST(request: Request) {
         .set({ attempts: otp.attempts + 1 })
         .where(eq(phoneOtps.id, otp.id));
       return jsonError("Invalid verification code.");
+    }
+
+    const phoneTaken = await db.query.users.findFirst({
+      where: and(
+        eq(users.phoneE164, otp.phoneE164),
+        ne(users.id, authResult.userId),
+        isNotNull(users.phoneVerifiedAt),
+      ),
+    });
+
+    if (phoneTaken) {
+      return jsonError("This phone number is already linked to another account.");
     }
 
     const now = new Date();
