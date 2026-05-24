@@ -60,11 +60,14 @@ export async function initiateWakeUpCall(input: {
 }
 
 export function buildWakeUpTwiml(audioBlobUrl: string, wakeupId: string) {
+  const appUrl = getAppUrl().startsWith("http")
+    ? getAppUrl()
+    : `https://${getAppUrl()}`;
   const response = new twilio.twiml.VoiceResponse();
   // Nest Play inside Gather so DTMF is listened for during audio (press 1 to interrupt).
   const gather = response.gather({
     numDigits: 1,
-    action: `/api/twilio/voice/confirm?wakeupId=${wakeupId}`,
+    action: `${appUrl}/api/twilio/voice/confirm?wakeupId=${wakeupId}`,
     method: "POST",
     timeout: 10,
   });

@@ -44,6 +44,10 @@ export async function POST(request: Request) {
     return new Response("Wake-up not found", { status: 404 });
   }
 
+  if (!wakeup.audioBlobUrl) {
+    return new Response("Wake-up audio not ready", { status: 503 });
+  }
+
   const twiml = buildWakeUpTwiml(wakeup.audioBlobUrl, wakeup.id);
   return new Response(twiml, {
     headers: { "Content-Type": "text/xml" },

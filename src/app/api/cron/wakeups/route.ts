@@ -1,5 +1,7 @@
 import { processDueWakeups } from "@/lib/wakeup/cron";
 
+export const maxDuration = 60;
+
 async function runCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;

@@ -17,12 +17,17 @@ export const wakeupStatusEnum = pgEnum("wakeup_status", [
   "exhausted",
   "cancelled",
 ]);
+export const wakeupScriptModeEnum = pgEnum("wakeup_script_mode", [
+  "static",
+  "dynamic",
+]);
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   phoneE164: text("phone_e164"),
   phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
   timezone: text("timezone").notNull().default("America/Toronto"),
+  city: text("city"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -61,8 +66,10 @@ export const wakeups = pgTable(
     scheduledDate: text("scheduled_date"),
     recurrence: jsonb("recurrence").$type<{ days: number[] } | null>(),
     scriptText: text("script_text").notNull(),
+    scriptMode: wakeupScriptModeEnum("script_mode").notNull().default("static"),
+    resolvedScriptText: text("resolved_script_text"),
     voiceId: text("voice_id").notNull(),
-    audioBlobUrl: text("audio_blob_url").notNull(),
+    audioBlobUrl: text("audio_blob_url"),
     status: wakeupStatusEnum("status").notNull().default("scheduled"),
     nextAttemptAt: timestamp("next_attempt_at", {
       withTimezone: true,

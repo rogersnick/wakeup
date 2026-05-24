@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PhoneVerification } from "@/components/phone-verification";
+import { CityInput } from "@/components/city-input";
 import { ScheduleForm } from "@/components/schedule-form";
 import { WakeupList } from "@/components/wakeup-list";
 
@@ -10,6 +11,7 @@ type MeResponse = {
     phoneE164: string | null;
     phoneVerifiedAt: string | null;
     timezone: string;
+    city: string | null;
   };
 };
 
@@ -51,7 +53,8 @@ export default function DashboardPage() {
             Your wake-ups
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-gray-600">
-            Verify your phone, schedule a wake-up, and watch the cron dial you.
+            Confirm your number, choose when we should call, and keep track of
+            the mornings you have lined up.
           </p>
         </div>
 
@@ -60,8 +63,15 @@ export default function DashboardPage() {
           onVerified={() => setRefreshKey((value) => value + 1)}
         />
 
+        <CityInput
+          key={me?.city ?? "unset"}
+          city={me?.city}
+          onSaved={() => setRefreshKey((value) => value + 1)}
+        />
+
         <ScheduleForm
           disabled={!phoneVerified}
+          userCity={me?.city}
           onCreated={() => setRefreshKey((value) => value + 1)}
         />
 

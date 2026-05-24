@@ -32,12 +32,19 @@ export async function POST(request: Request) {
       scheduledDate?: string | null;
       recurrence?: { days: number[] } | null;
       scriptText?: string;
+      scriptMode?: "static" | "dynamic";
       voiceId?: string;
       timezone?: string;
     };
 
-    if (!body.type || !body.scheduledTimeLocal || !body.scriptText) {
-      return jsonError("type, scheduledTimeLocal, and scriptText are required.");
+    const scriptMode = body.scriptMode ?? "static";
+
+    if (!body.type || !body.scheduledTimeLocal) {
+      return jsonError("type and scheduledTimeLocal are required.");
+    }
+
+    if (scriptMode === "static" && !body.scriptText?.trim()) {
+      return jsonError("scriptText is required for custom wake-up messages.");
     }
 
     await getOrCreateUser(authResult.userId, body.timezone);
@@ -47,7 +54,8 @@ export async function POST(request: Request) {
       scheduledTimeLocal: body.scheduledTimeLocal,
       scheduledDate: body.scheduledDate,
       recurrence: body.recurrence,
-      scriptText: body.scriptText,
+      scriptText: body.scriptText?.trim() ?? "",
+      scriptMode,
       voiceId: body.voiceId,
       timezone: body.timezone,
     });

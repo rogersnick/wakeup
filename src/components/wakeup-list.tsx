@@ -14,6 +14,8 @@ type Wakeup = {
   scheduledDate: string | null;
   recurrence: { days: number[] } | null;
   scriptText: string;
+  scriptMode: "static" | "dynamic";
+  resolvedScriptText: string | null;
   status: string;
   nextAttemptAt: string;
   attemptCount: number;
@@ -126,7 +128,19 @@ export function WakeupList({ refreshKey = 0 }: { refreshKey?: number }) {
                   {wakeup.scheduledTimeLocal}
                 </p>
                 <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                  {wakeup.scriptText}
+                  {wakeup.scriptMode === "dynamic" ? (
+                    <>
+                      <span className="font-semibold text-gray-700">Surprise me</span>
+                      {wakeup.resolvedScriptText ? (
+                        <>
+                          {" "}
+                          — Last message: &ldquo;{wakeup.resolvedScriptText}&rdquo;
+                        </>
+                      ) : null}
+                    </>
+                  ) : (
+                    wakeup.scriptText
+                  )}
                 </p>
               </div>
               <Badge variant={statusVariant(wakeup.status)}>{wakeup.status}</Badge>
